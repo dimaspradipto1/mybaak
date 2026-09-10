@@ -1,33 +1,72 @@
 @extends('layouts.dashboard.template')
 
+@push('styles')
+<style>
+    #surataktif-table th.col-checkbox,
+    #surataktif-table td.col-checkbox {
+        width: 38px !important;
+        min-width: 38px !important;
+        max-width: 45px !important;
+        padding: 8px 4px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+    }
+    #surataktif-table th.col-no,
+    #surataktif-table td.col-no {
+        width: 45px !important;
+        min-width: 45px !important;
+        max-width: 55px !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="card">
     <div class="card-header">
-        @can('surat_aktif_create')
-            <a href="{{ route('suratAktif.create') }}" class="btn btn-primary rounded btn-sm"><i class="fa-solid fa-plus"></i> Tambah</a>
-            <button type="button" class="btn btn-info rounded btn-sm" data-toggle="modal" data-target="#importModal">
-                <i class="fa-solid fa-file-excel"></i> Import
-            </button>
-        @endcan
-
-        @if(auth()->user()->is_mahasiswa)
-            @php
-                $hasPendingSuratAktif = \App\Models\SuratAktif::where('users_id', auth()->id())->where('status', 'pending')->exists();
-            @endphp
-            @if($hasPendingSuratAktif)
-                <button type="button" class="btn btn-warning rounded btn-sm text-white" disabled title="Pengajuan Anda sedang diproses">
-                    <i class="fa-solid fa-clock"></i> Pengajuan Sedang Diproses
+        <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
+            @can('surat_aktif_create')
+                <a href="{{ route('suratAktif.create') }}" class="btn btn-primary rounded btn-sm d-inline-flex align-items-center text-nowrap" style="white-space: nowrap;">
+                    <i class="fa-solid fa-plus mr-1"></i> Tambah
+                </a>
+                <button type="button" class="btn btn-info rounded btn-sm text-white d-inline-flex align-items-center text-nowrap" data-toggle="modal" data-target="#importModal" style="white-space: nowrap;">
+                    <i class="fa-solid fa-file-excel mr-1"></i> Import
                 </button>
-            @else
-                <!-- Tombol hanya untuk mahasiswa: Pengajuan -->
-                <form action="{{ route('suratAktif.pengajuan') }}" method="POST" style="display: inline;">
-                    @csrf
-                    <button type="submit" class="btn btn-success rounded btn-sm">
-                        <i class="fa-solid fa-plus"></i> Pengajuan
-                    </button>
-                </form>
+            @endcan
+
+            @if(auth()->user()->is_admin || auth()->user()->is_superadmin || auth()->user()->is_staffbaak || auth()->user()->can('surat_aktif_edit') || auth()->user()->can('surat_aktif_delete'))
+                <button type="button" class="btn btn-warning rounded btn-sm text-white d-inline-flex align-items-center text-nowrap" id="btn-bulk-status" data-toggle="modal" data-target="#modalBulkStatusAktif" disabled style="white-space: nowrap;">
+                    <i class="fa-solid fa-pen-to-square mr-1"></i> Update Status
+                    <span class="badge badge-light text-dark font-weight-bold ml-1 selected-count" style="font-size: 11px; padding: 2px 7px; border-radius: 10px;">0</span>
+                </button>
+                <button type="button" class="btn btn-danger rounded btn-sm text-white d-inline-flex align-items-center text-nowrap" id="btn-bulk-delete" disabled style="white-space: nowrap;">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Hapus Terpilih
+                    <span class="badge badge-light text-danger font-weight-bold ml-1 selected-count" style="font-size: 11px; padding: 2px 7px; border-radius: 10px;">0</span>
+                </button>
             @endif
-        @endif
+
+            @if(auth()->user()->is_mahasiswa)
+                @php
+                    $hasPendingSuratAktif = \App\Models\SuratAktif::where('users_id', auth()->id())->where('status', 'pending')->exists();
+                @endphp
+                @if($hasPendingSuratAktif)
+                    <button type="button" class="btn btn-warning rounded btn-sm text-white d-inline-flex align-items-center text-nowrap" disabled title="Pengajuan Anda sedang diproses" style="white-space: nowrap;">
+                        <i class="fa-solid fa-clock mr-1"></i> Pengajuan Sedang Diproses
+                    </button>
+                @else
+                    <!-- Tombol hanya untuk mahasiswa: Pengajuan -->
+                    <form action="{{ route('suratAktif.pengajuan') }}" method="POST" style="display: inline-flex; margin: 0;">
+                        @csrf
+                        <button type="submit" class="btn btn-success rounded btn-sm d-inline-flex align-items-center text-nowrap" style="white-space: nowrap;">
+                            <i class="fa-solid fa-plus mr-1"></i> Pengajuan
+                        </button>
+                    </form>
+                @endif
+            @endif
+        </div>
 
         <div class="card-header-right">
             <ul class="list-unstyled card-option">
@@ -84,6 +123,50 @@
         </form>
     </div>
 </div>
+
+<!-- Modal Bulk Update Status -->
+<div class="modal fade" id="modalBulkStatusAktif" tabindex="-1" role="dialog" aria-labelledby="modalBulkStatusAktifLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <form id="form-bulk-status" action="{{ route('suratAktif.bulkUpdateStatus') }}" method="POST">
+            @csrf
+            <div id="bulk-status-inputs"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold" id="modalBulkStatusAktifLabel">
+                        <i class="fa-solid fa-pen-to-square text-warning mr-1"></i> Update Status Surat Aktif Terpilih
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info py-2">
+                        <i class="fa-solid fa-info-circle mr-1"></i> Jumlah data terpilih: <strong><span class="selected-count">0</span> data</strong>
+                    </div>
+                    <div class="form-group">
+                        <label for="bulk_status" class="font-weight-bold">Pilih Status Baru <span class="text-danger">*</span></label>
+                        <select name="status" id="bulk_status" class="form-control" required>
+                            <option value="">-- Pilih Status --</option>
+                            <option value="pending">Pending</option>
+                            <option value="diterima">Diterima</option>
+                            <option value="ditolak">Ditolak</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check mr-1"></i> Simpan Perubahan</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Form Bulk Delete (Hidden) -->
+<form id="form-bulk-delete" action="{{ route('suratAktif.bulkDelete') }}" method="POST" style="display: none;">
+    @csrf
+    <div id="bulk-delete-inputs"></div>
+</form>
 @endsection
 
 @push('scripts')
@@ -92,4 +175,128 @@
     @else
         {!! $dataTable->scripts() !!}
     @endif
+
+    <script>
+        $(document).ready(function() {
+            var selectedIds = new Set();
+
+            function updateBulkButtons() {
+                var count = selectedIds.size;
+                $('.selected-count').text(count);
+                if (count > 0) {
+                    $('#btn-bulk-status').prop('disabled', false);
+                    $('#btn-bulk-delete').prop('disabled', false);
+                } else {
+                    $('#btn-bulk-status').prop('disabled', true);
+                    $('#btn-bulk-delete').prop('disabled', true);
+                }
+
+                // Sync hidden inputs
+                var deleteInputs = '';
+                var statusInputs = '';
+                selectedIds.forEach(function(id) {
+                    deleteInputs += '<input type="hidden" name="ids[]" value="' + id + '">';
+                    statusInputs += '<input type="hidden" name="ids[]" value="' + id + '">';
+                });
+                $('#bulk-delete-inputs').html(deleteInputs);
+                $('#bulk-status-inputs').html(statusInputs);
+            }
+
+            function syncSelectAllCheckbox() {
+                var totalRows = $('.row-checkbox').length;
+                var checkedRows = $('.row-checkbox:checked').length;
+                if (totalRows > 0 && totalRows === checkedRows) {
+                    $('#select-all').prop('checked', true);
+                } else {
+                    $('#select-all').prop('checked', false);
+                }
+            }
+
+            // Sync checkboxes when DataTable renders or redraws (pagination, search, sort)
+            $(document).on('draw.dt', function() {
+                $('.row-checkbox').each(function() {
+                    var val = $(this).val();
+                    if (selectedIds.has(val)) {
+                        $(this).prop('checked', true);
+                    } else {
+                        $(this).prop('checked', false);
+                    }
+                });
+                syncSelectAllCheckbox();
+                updateBulkButtons();
+            });
+
+            // Select All Header Checkbox
+            $(document).on('change', '#select-all', function() {
+                var isChecked = $(this).is(':checked');
+                $('.row-checkbox').each(function() {
+                    $(this).prop('checked', isChecked);
+                    var val = $(this).val();
+                    if (isChecked) {
+                        selectedIds.add(val);
+                    } else {
+                        selectedIds.delete(val);
+                    }
+                });
+                updateBulkButtons();
+            });
+
+            // Individual Row Checkbox
+            $(document).on('change', '.row-checkbox', function() {
+                var val = $(this).val();
+                if ($(this).is(':checked')) {
+                    selectedIds.add(val);
+                } else {
+                    selectedIds.delete(val);
+                }
+                syncSelectAllCheckbox();
+                updateBulkButtons();
+            });
+
+            // Bulk Delete Click Handler
+            $('#btn-bulk-delete').on('click', function(e) {
+                e.preventDefault();
+                var count = selectedIds.size;
+                if (count === 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Peringatan',
+                        text: 'Silakan pilih data yang ingin dihapus terlebih dahulu.'
+                    });
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Konfirmasi Hapus Massal',
+                    text: 'Apakah Anda yakin ingin menghapus ' + count + ' data surat aktif terpilih?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Hapus Semua!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $('#form-bulk-delete').submit();
+                    }
+                });
+            });
+
+            // Bulk Status Button Click Handler
+            $('#btn-bulk-status').on('click', function(e) {
+                var count = selectedIds.size;
+                if (count === 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Peringatan',
+                        text: 'Silakan pilih data yang ingin diubah statusnya terlebih dahulu.'
+                    });
+                    return false;
+                }
+            });
+        });
+    </script>
 @endpush

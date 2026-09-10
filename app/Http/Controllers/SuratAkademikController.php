@@ -207,6 +207,65 @@ class SuratAkademikController extends Controller
     }
 
     /**
+     * Remove multiple resources from storage.
+     */
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->input('ids');
+        if (is_string($ids)) {
+            $ids = explode(',', $ids);
+        }
+        $ids = array_filter((array) $ids);
+
+        if (empty($ids)) {
+            Alert::warning('Peringatan', 'Tidak ada data yang dipilih.')->autoclose(3000)->toToast();
+            return redirect()->back();
+        }
+
+        $count = SuratAkademik::whereIn('id', $ids)->delete();
+
+        Alert::success('Berhasil!', "{$count} data surat akademik berhasil dihapus")
+            ->autoclose(3000)
+            ->toToast()
+            ->timerProgressBar()
+            ->iconHtml('<i class="fa-solid fa-check"></i>');
+
+        return redirect()->route('suratAkademik.index');
+    }
+
+    /**
+     * Update status of multiple resources in storage.
+     */
+    public function bulkUpdateStatus(Request $request)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,diterima,ditolak',
+        ]);
+
+        $ids = $request->input('ids');
+        if (is_string($ids)) {
+            $ids = explode(',', $ids);
+        }
+        $ids = array_filter((array) $ids);
+
+        if (empty($ids)) {
+            Alert::warning('Peringatan', 'Tidak ada data yang dipilih.')->autoclose(3000)->toToast();
+            return redirect()->back();
+        }
+
+        $count = SuratAkademik::whereIn('id', $ids)->update(['status' => $request->status]);
+
+        $statusText = ucfirst($request->status);
+        Alert::success('Berhasil!', "Status {$count} data surat akademik berhasil diubah menjadi {$statusText}")
+            ->autoclose(3000)
+            ->toToast()
+            ->timerProgressBar()
+            ->iconHtml('<i class="fa-solid fa-check"></i>');
+
+        return redirect()->route('suratAkademik.index');
+    }
+
+    /**
      * Show the form for editing status only.
      */
     public function editStatus(SuratAkademik $suratAkademik)

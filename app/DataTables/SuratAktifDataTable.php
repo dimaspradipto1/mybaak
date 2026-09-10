@@ -26,6 +26,9 @@ class SuratAktifDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->addIndexColumn()
             ->addColumn('DT_RowIndex', '')
+            ->addColumn('checkbox', function ($item) {
+                return '<input type="checkbox" name="ids[]" class="row-checkbox" value="' . $item->id . '" style="cursor: pointer; transform: scale(1.2);">';
+            })
             ->addColumn('users_id', function ($item) {
                 $name = $item->users ? $item->users->name : '-';
                 if (Auth::user()->is_admin || Auth::user()->is_superadmin || Auth::user()->is_staffbaak) {
@@ -115,7 +118,7 @@ class SuratAktifDataTable extends DataTable
                 return $actions;
             })
             ->setRowId('DT_RowIndex')
-            ->rawColumns(['action', 'users_id', 'program_studi_id', 'status', 'created_at']);
+            ->rawColumns(['action', 'users_id', 'program_studi_id', 'status', 'created_at', 'checkbox']);
     }
 
     /**
@@ -151,13 +154,19 @@ class SuratAktifDataTable extends DataTable
      */
     public function html(): HtmlBuilder
     {
+        $user = Auth::user();
+        $canBulk = $user && ($user->is_admin || $user->is_superadmin || $user->is_staffbaak || Gate::check('surat_aktif_edit') || Gate::check('surat_aktif_delete'));
+
         return $this->builder()
             ->setTableId('surataktif-table')
             ->columns($this->getColumns())
             ->minifiedAjax()
-            ->orderBy(0, 'desc')
+            ->orderBy($canBulk ? 4 : 3, 'desc')
             ->selectStyleSingle()
             ->scrollX(true)
+            ->parameters([
+                'autoWidth' => false,
+            ])
             ->buttons([
                 Button::make('excel'),
                 Button::make('csv'),
@@ -173,34 +182,54 @@ class SuratAktifDataTable extends DataTable
      */
     public function getColumns(): array
     {
-        return [
-            Column::make('DT_RowIndex')
-                ->title('NO')
-                ->width('5%')
-                ->addClass('text-center'),
-            Column::make('users_id')
-                ->title('NAMA MAHASISWA')
-                ->width('15%')
-                ->addClass('text-start'),
-            Column::make('program_studi_id')
-                ->title('PROGRAM STUDI')
-                ->width('15%')
-                ->addClass('text-start'),
-            Column::make('created_at')
-                ->title('TANGGAL SUBMIT')
-                ->width('18%')
-                ->addClass('text-center'),
-            Column::make('status')
-                ->title('STATUS')
-                ->width('10%')
-                ->addClass('text-center'),
-            Column::computed('action')
-                ->title('AKSI')
+        $columns = [];
+        $user = Auth::user();
+        if ($user && ($user->is_admin || $user->is_superadmin || $user->is_staffbaak || Gate::check('surat_aktif_edit') || Gate::check('surat_aktif_delete'))) {
+            $columns[] = Column::computed('checkbox')
+                ->title('<input type="checkbox" id="select-all" title="Pilih Semua" style="cursor: pointer; transform: scale(1.1);">')
                 ->exportable(false)
                 ->printable(false)
-                ->width('20%')
-                ->addClass('text-center'),
-        ];
+                ->width('1%')
+                ->addClass('text-center align-middle col-checkbox')
+                ->orderable(false)
+                ->searchable(false);
+        }
+
+        $columns[] = Column::make('DT_RowIndex')
+            ->title('NO')
+            ->width('1%')
+            ->addClass('text-center align-middle col-no')
+            ->orderable(false)
+            ->searchable(false);
+
+        $columns[] = Column::make('users_id')
+            ->title('NAMA MAHASISWA')
+            ->width('25%')
+            ->addClass('text-start');
+
+        $columns[] = Column::make('program_studi_id')
+            ->title('PROGRAM STUDI')
+            ->width('20%')
+            ->addClass('text-start');
+
+        $columns[] = Column::make('created_at')
+            ->title('TANGGAL SUBMIT')
+            ->width('18%')
+            ->addClass('text-center');
+
+        $columns[] = Column::make('status')
+            ->title('STATUS')
+            ->width('10%')
+            ->addClass('text-center');
+
+        $columns[] = Column::computed('action')
+            ->title('AKSI')
+            ->exportable(false)
+            ->printable(false)
+            ->width('15%')
+            ->addClass('text-center');
+
+        return $columns;
     }
 
     /**

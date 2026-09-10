@@ -26,6 +26,9 @@ class SuratAkademikDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->addIndexColumn()
             ->addColumn('DT_RowIndex', '')
+            ->addColumn('checkbox', function ($item) {
+                return '<input type="checkbox" name="ids[]" class="row-checkbox" value="' . $item->id . '" style="cursor: pointer; transform: scale(1.2);">';
+            })
             ->addColumn('users_id', function ($item) {
                 return $item->user ? $item->user->name : '-';
             })
@@ -47,6 +50,12 @@ class SuratAkademikDataTable extends DataTable
             })
             ->filterColumn('created_at', function ($query, $keyword) {
                 $query->where('created_at', 'like', "%{$keyword}%");
+            })
+            ->addColumn('status', function ($item) {
+                return $item->status == 'pending' ? '<span class="badge badge-warning text-white px-3 py-2">Pending</span>' : ($item->status == 'diterima' ? '<span class="badge badge-success text-white px-3 py-2">Diterima</span>' : ($item->status == 'ditolak' ? '<span class="badge badge-danger text-white px-3 py-2">Ditolak</span>' : '-'));
+            })
+            ->filterColumn('status', function ($query, $keyword) {
+                $query->where('status', 'like', "%{$keyword}%");
             })
             ->addColumn('action', function ($item) {
                 $showButton = '';
@@ -80,7 +89,7 @@ class SuratAkademikDataTable extends DataTable
                 return $result;
             })
             ->setRowId('DT_RowIndex')
-            ->rawColumns(['action', 'users_id', 'program_studi_id', 'created_at']);
+            ->rawColumns(['action', 'users_id', 'program_studi_id', 'created_at', 'status', 'checkbox']);
     }
 
 
@@ -114,13 +123,19 @@ class SuratAkademikDataTable extends DataTable
      */
     public function html(): HtmlBuilder
     {
+        $user = Auth::user();
+        $canBulk = $user && ($user->is_admin || $user->is_superadmin || $user->is_staffbaak || Gate::check('surat_akademik_edit') || Gate::check('surat_akademik_delete'));
+
         return $this->builder()
             ->setTableId('suratakademik-table')
             ->columns($this->getColumns())
             ->minifiedAjax()
-            ->orderBy(0, 'desc')
+            ->orderBy($canBulk ? 4 : 3, 'desc')
             ->selectStyleSingle()
             ->scrollX(true)
+            ->parameters([
+                'autoWidth' => false,
+            ])
             ->buttons([
                 Button::make('excel'),
                 Button::make('csv'),
@@ -136,30 +151,54 @@ class SuratAkademikDataTable extends DataTable
      */
     public function getColumns(): array
     {
-        return [
-            Column::make('DT_RowIndex')
-                ->title('NO')
-                ->width('5%')
-                ->addClass('text-center'),
-            Column::make('users_id')
-                ->title('NAMA MAHASISWA')
-                ->width('15%')
-                ->addClass('text-start'),
-            Column::make('program_studi_id')
-                ->title('PROGRAM STUDI')
-                ->width('15%')
-                ->addClass('text-start'),
-            Column::make('created_at')
-                ->title('TANGGAL SUBMIT')
-                ->width('18%')
-                ->addClass('text-center'),
-            Column::computed('action')
-                ->title('AKSI')
+        $columns = [];
+        $user = Auth::user();
+        if ($user && ($user->is_admin || $user->is_superadmin || $user->is_staffbaak || Gate::check('surat_akademik_edit') || Gate::check('surat_akademik_delete'))) {
+            $columns[] = Column::computed('checkbox')
+                ->title('<input type="checkbox" id="select-all" title="Pilih Semua" style="cursor: pointer; transform: scale(1.1);">')
                 ->exportable(false)
                 ->printable(false)
-                ->width('20%')
-                ->addClass('text-center'),
-        ];
+                ->width('1%')
+                ->addClass('text-center align-middle col-checkbox')
+                ->orderable(false)
+                ->searchable(false);
+        }
+
+        $columns[] = Column::make('DT_RowIndex')
+            ->title('NO')
+            ->width('1%')
+            ->addClass('text-center align-middle col-no')
+            ->orderable(false)
+            ->searchable(false);
+
+        $columns[] = Column::make('users_id')
+            ->title('NAMA MAHASISWA')
+            ->width('25%')
+            ->addClass('text-start');
+
+        $columns[] = Column::make('program_studi_id')
+            ->title('PROGRAM STUDI')
+            ->width('20%')
+            ->addClass('text-start');
+
+        $columns[] = Column::make('created_at')
+            ->title('TANGGAL SUBMIT')
+            ->width('18%')
+            ->addClass('text-center');
+
+        $columns[] = Column::make('status')
+            ->title('STATUS')
+            ->width('10%')
+            ->addClass('text-center');
+
+        $columns[] = Column::computed('action')
+            ->title('AKSI')
+            ->exportable(false)
+            ->printable(false)
+            ->width('15%')
+            ->addClass('text-center');
+
+        return $columns;
     }
 
     /**

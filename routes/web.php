@@ -82,9 +82,13 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
     Route::resource('dosen', DosenController::class);
     Route::get('/suratAktif/export-template', [SuratAktifController::class, 'exportTemplate'])->name('suratAktif.export-template');
     Route::post('/suratAktif/import', [SuratAktifController::class, 'import'])->name('suratAktif.import');
+    Route::post('/suratAktif/bulk-delete', [SuratAktifController::class, 'bulkDelete'])->name('suratAktif.bulkDelete');
+    Route::post('/suratAktif/bulk-update-status', [SuratAktifController::class, 'bulkUpdateStatus'])->name('suratAktif.bulkUpdateStatus');
     Route::resource('suratAktif', SuratAktifController::class);
     Route::get('/suratAkademik/export-template', [SuratAkademikController::class, 'exportTemplate'])->name('suratAkademik.export-template');
     Route::post('/suratAkademik/import', [SuratAkademikController::class, 'import'])->name('suratAkademik.import');
+    Route::post('/suratAkademik/bulk-delete', [SuratAkademikController::class, 'bulkDelete'])->name('suratAkademik.bulkDelete');
+    Route::post('/suratAkademik/bulk-update-status', [SuratAkademikController::class, 'bulkUpdateStatus'])->name('suratAkademik.bulkUpdateStatus');
     Route::resource('suratAkademik', SuratAkademikController::class);
     Route::get('/suratAkademik/{suratAkademik}/editStatus', [SuratAkademikController::class, 'editStatus'])->name('suratAkademik.editStatus');
     Route::put('/suratAkademik/{suratAkademik}/updateStatus', [SuratAkademikController::class, 'updateStatus'])->name('suratAkademik.updateStatus');
