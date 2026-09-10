@@ -47,9 +47,21 @@ class MahasiswaController extends Controller
     {
         $data = $request->validated();
 
-        if (Auth::user()->is_mahasiswa) {
-            // Menambahkan `users_id` dari user yang login
-            $data['users_id'] = Auth::id();
+        $userId = Auth::user()->is_mahasiswa ? Auth::id() : ($data['users_id'] ?? null);
+
+        if (!$userId) {
+            Alert::error('Gagal', 'User wajib dipilih!')->autoclose(4000)->toToast();
+            return redirect()->back()->withInput();
+        }
+
+        $data['users_id'] = $userId;
+
+        // Cek apakah user sudah memiliki data mahasiswa
+        $existing = Mahasiswa::where('users_id', $userId)->first();
+        if ($existing) {
+            Alert::warning('Peringatan', 'Pengguna ini sudah terdaftar sebagai data mahasiswa.')
+                ->autoclose(5000)->toToast()->timerProgressBar();
+            return redirect()->back()->withInput();
         }
 
         Mahasiswa::create($data);

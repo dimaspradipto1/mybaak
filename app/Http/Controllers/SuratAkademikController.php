@@ -89,6 +89,30 @@ class SuratAkademikController extends Controller
             return redirect()->back()->with('error', 'Program studi mahasiswa tidak ditemukan!');
         }
 
+        // Cek apakah mahasiswa masih memiliki pengajuan surat akademik yang berstatus pending
+        $existingPending = SuratAkademik::where('users_id', $userId)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingPending) {
+            Alert::warning('Peringatan', 'Pengguna ini masih memiliki pengajuan Surat Layanan Akademik yang berstatus Pending. Mohon tunggu verifikasi selesai.')
+                ->autoclose(5000)->toToast()->timerProgressBar();
+            return redirect()->back()->withInput();
+        }
+
+        // Cek apakah pengajuan identik sudah pernah dibuat untuk semester dan permohonan yang sama
+        $existingIdentical = SuratAkademik::where('users_id', $userId)
+            ->where('semester', $request->semester)
+            ->where('permohonan', $request->permohonan)
+            ->whereIn('status', ['pending', 'diterima'])
+            ->first();
+
+        if ($existingIdentical) {
+            Alert::warning('Peringatan', 'Pengajuan untuk semester dan permohonan tersebut sudah ada sebelumnya.')
+                ->autoclose(5000)->toToast()->timerProgressBar();
+            return redirect()->back()->withInput();
+        }
+
         $kabaak = Pegawai::where('jabatan', 'LIKE', '%BIRO ADMINISTRASI AKADEMIK%')->first();
         $kabauk = Pegawai::where('jabatan', 'LIKE', '%BIRO ADMINISTRASI UMUM%')->first();
 

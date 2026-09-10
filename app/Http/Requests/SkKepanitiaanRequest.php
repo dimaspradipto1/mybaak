@@ -22,11 +22,13 @@ class SkKepanitiaanRequest extends FormRequest
      */
     public function rules(): array
     {
+        $skId = $this->route('skkepanitiaan') ? ($this->route('skkepanitiaan')->id ?? $this->route('skkepanitiaan')) : null;
+
         return [
             'tahun_akademik_id' => 'required',
             'semester' => 'required',
             'nama_dokumen' => 'required',
-            'nomor_sk' => 'required',
+            'nomor_sk' => 'required|string|max:255|unique:sk_kepanitiaans,nomor_sk,' . $skId,
             'jenissk_id' => 'required',
             'fakultas' => 'required',
             'file' => ($this->isMethod('post') ? 'required' : 'nullable') . '|file|mimes:pdf|max:51200',
@@ -40,6 +42,7 @@ class SkKepanitiaanRequest extends FormRequest
             'semester.required' => 'Semester wajib diisi',
             'nama_dokumen.required' => 'Nama Dokumen wajib diisi',
             'nomor_sk.required' => 'Nomor SK wajib diisi',
+            'nomor_sk.unique' => 'Nomor SK sudah digunakan, tidak boleh ada nomor SK ganda.',
             'jenissk_id.required' => 'Jenis SK wajib diisi',
             'fakultas.required' => 'Fakultas wajib diisi',
             'file.required' => 'File wajib diisi',

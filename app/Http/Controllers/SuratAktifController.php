@@ -81,6 +81,32 @@ class SuratAktifController extends Controller
             return redirect()->route('mahasiswa.create');
         }
 
+        // Cek apakah ada pengajuan surat aktif yang masih berstatus pending
+        $existingPending = SuratAktif::where('users_id', Auth::id())
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingPending) {
+            Alert::warning('Peringatan', 'Anda masih memiliki pengajuan Surat Aktif yang berstatus Pending. Mohon tunggu hingga proses verifikasi selesai.')
+                ->autoclose(5000)->toToast()->timerProgressBar();
+            return redirect()->route('suratAktif.index');
+        }
+
+        // Cek apakah sudah pernah diterbitkan di semester & tahun akademik yang sama
+        if ($mahasiswa->semester && $mahasiswa->tahun_akademik) {
+            $existingApproved = SuratAktif::where('users_id', Auth::id())
+                ->where('status', 'diterima')
+                ->where('semester', $mahasiswa->semester)
+                ->where('tahun_akademik', $mahasiswa->tahun_akademik)
+                ->first();
+
+            if ($existingApproved) {
+                Alert::warning('Peringatan', 'Anda sudah memiliki Surat Aktif yang telah disetujui untuk semester dan tahun akademik ini.')
+                    ->autoclose(5000)->toToast()->timerProgressBar();
+                return redirect()->route('suratAktif.index');
+            }
+        }
+
         $lastSurat = SuratAktif::latest('no_surat')->first();
         $noSurat = $lastSurat ? $lastSurat->no_surat + 1 : 1;
         $noSuratFormatted = sprintf("%03d", $noSurat);
@@ -116,10 +142,22 @@ class SuratAktifController extends Controller
      */
     public function store(Request $request)
     {
+        $userId = Auth::user()->is_mahasiswa ? Auth::id() : $request->users_id;
+
+        // Validasi tidak boleh double data jika masih ada pending
+        $existingPending = SuratAktif::where('users_id', $userId)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingPending) {
+            Alert::warning('Peringatan', 'Pengguna ini masih memiliki pengajuan Surat Aktif yang berstatus Pending.')
+                ->autoclose(5000)->toToast()->timerProgressBar();
+            return redirect()->back()->withInput();
+        }
+
         $lastSurat = SuratAktif::latest('no_surat')->first();
         $noSurat = $lastSurat ? (int) $lastSurat->no_surat + 1 : 1;
         $noSuratFormatted = sprintf("%03d", $noSurat);
-        $userId = Auth::user()->is_mahasiswa ? Auth::id() : $request->users_id;
 
         $data = [
             'no_surat' => $noSuratFormatted,

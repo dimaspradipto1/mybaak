@@ -61,6 +61,18 @@ class LpjKepanitiaanController extends Controller
                 $data['fakultas'] = Auth::user()->fakultas;
             }
 
+            // Cek apakah data LPJ dengan nama dokumen, tahun akademik, dan semester yang sama sudah ada
+            $existingLpj = LpjKepanitiaan::where('nama_dokumen', $data['nama_dokumen'])
+                ->where('tahun_akademik_id', $data['tahun_akademik_id'])
+                ->where('semester', $data['semester'])
+                ->first();
+
+            if ($existingLpj) {
+                Alert::warning('Peringatan', 'Data LPJ dengan nama dokumen, tahun akademik, dan semester tersebut sudah ada.')
+                    ->autoclose(5000)->toToast()->timerProgressBar();
+                return redirect()->back()->withInput();
+            }
+
             if ($request->hasFile('file')) {
                 $uploaded = $request->file('file');
                 $safeOriginal = preg_replace('/[^A-Za-z0-9\.\-_ ]/', '', $uploaded->getClientOriginalName());
@@ -151,6 +163,19 @@ class LpjKepanitiaanController extends Controller
             // Set fakultas otomatis jika tidak ada di request
             if (!isset($data['fakultas']) || empty($data['fakultas'])) {
                 $data['fakultas'] = Auth::user()->fakultas;
+            }
+
+            // Cek apakah data LPJ lain dengan nama dokumen, tahun akademik, dan semester yang sama sudah ada
+            $existingLpj = LpjKepanitiaan::where('nama_dokumen', $data['nama_dokumen'])
+                ->where('tahun_akademik_id', $data['tahun_akademik_id'])
+                ->where('semester', $data['semester'])
+                ->where('id', '!=', $lpjkepanitiaan->id)
+                ->first();
+
+            if ($existingLpj) {
+                Alert::warning('Peringatan', 'Data LPJ dengan nama dokumen, tahun akademik, dan semester tersebut sudah ada.')
+                    ->autoclose(5000)->toToast()->timerProgressBar();
+                return redirect()->back()->withInput();
             }
 
             if ($request->hasFile('file')) {

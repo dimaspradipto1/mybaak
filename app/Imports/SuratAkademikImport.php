@@ -29,6 +29,16 @@ class SuratAkademikImport implements ToModel, WithHeadingRow
             return null;
         }
 
+        // Cek jika data pengajuan surat akademik sudah ada agar tidak double
+        $exists = SuratAkademik::where('users_id', $user->id)
+                    ->where('semester', $row['semester'] ?? null)
+                    ->where('permohonan', $row['permohonan'] ?? 'Cuti Akademik')
+                    ->exists();
+        if ($exists) {
+            Log::info('Import Surat Akademik: Data sudah ada untuk ' . $user->name . ', dilewati.');
+            return null;
+        }
+
         return new SuratAkademik([
             'users_id'                  => $user->id,
             'program_studi_id'          => $prodi->id,

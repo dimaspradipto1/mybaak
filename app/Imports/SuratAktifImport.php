@@ -34,6 +34,15 @@ class SuratAktifImport implements ToModel, WithHeadingRow
             return null;
         }
 
+        // Cek jika nomor surat sudah ada agar tidak double data
+        if (!empty($row['no_surat'])) {
+            $exists = SuratAktif::where('no_surat', $row['no_surat'])->exists();
+            if ($exists) {
+                Log::info('Import Surat Aktif: No surat ' . $row['no_surat'] . ' sudah ada, dilewati.');
+                return null;
+            }
+        }
+
         return new SuratAktif([
             'users_id'           => $user->id,
             'program_studi_id'   => $prodi->id,

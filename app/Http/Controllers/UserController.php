@@ -85,6 +85,19 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
+        $request->validate([
+            'name'      => 'required|string|max:255|unique:users,name,' . $user->id,
+            'email'     => 'required|email|max:255|unique:users,email,' . $user->id,
+            'role_id'   => 'required|exists:roles,id',
+            'is_active' => 'nullable|boolean',
+        ], [
+            'name.required'    => 'Nama Lengkap wajib diisi',
+            'name.unique'      => 'Nama pengguna sudah digunakan, tidak boleh duplikat',
+            'email.required'   => 'Email wajib diisi',
+            'email.unique'     => 'Email sudah terdaftar, tidak boleh duplikat',
+            'role_id.required' => 'Role Akses wajib diisi',
+        ]);
+
         $updateData = [
             'name'      => $request->name,
             'email'     => $request->email,

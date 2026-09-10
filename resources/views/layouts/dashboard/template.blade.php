@@ -330,6 +330,44 @@
         }
 
         $(document).ready(function() {
+            // Global Double-Submit Prevention for All Forms
+            $(document).on('submit', 'form', function(e) {
+                var $form = $(this);
+
+                if ($form.hasClass('no-prevent-double-submit')) {
+                    return true;
+                }
+
+                if ($form.data('is-submitting') === true) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                $form.data('is-submitting', true);
+                var $btn = $form.find('button[type="submit"], input[type="submit"]');
+
+                setTimeout(function() {
+                    $btn.prop('disabled', true);
+                    if ($btn.is('button')) {
+                        $btn.data('orig-text', $btn.html());
+                        $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...');
+                    }
+                }, 10);
+            });
+
+            // Re-enable button if HTML5 validation stops submission
+            $(document).on('invalid', 'input, select, textarea', function() {
+                var $form = $(this).closest('form');
+                if ($form.length) {
+                    $form.data('is-submitting', false);
+                    var $btn = $form.find('button[type="submit"], input[type="submit"]');
+                    $btn.prop('disabled', false);
+                    if ($btn.is('button') && $btn.data('orig-text')) {
+                        $btn.html($btn.data('orig-text'));
+                    }
+                }
+            });
+
             $(document).on('click', 'button[onclick*="confirm"], a[onclick*="confirm"]', function(e) {
                 e.preventDefault();
                 e.stopPropagation();

@@ -11,13 +11,22 @@
         @endcan
 
         @if(auth()->user()->is_mahasiswa)
-            <!-- Tombol hanya untuk mahasiswa: Pengajuan -->
-            <form action="{{ route('suratAktif.pengajuan') }}" method="POST" style="display: inline;">
-                @csrf
-                <button type="submit" class="btn btn-success rounded btn-sm">
-                    <i class="fa-solid fa-plus"></i> Pengajuan
+            @php
+                $hasPendingSuratAktif = \App\Models\SuratAktif::where('users_id', auth()->id())->where('status', 'pending')->exists();
+            @endphp
+            @if($hasPendingSuratAktif)
+                <button type="button" class="btn btn-warning rounded btn-sm text-white" disabled title="Pengajuan Anda sedang diproses">
+                    <i class="fa-solid fa-clock"></i> Pengajuan Sedang Diproses
                 </button>
-            </form>
+            @else
+                <!-- Tombol hanya untuk mahasiswa: Pengajuan -->
+                <form action="{{ route('suratAktif.pengajuan') }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-success rounded btn-sm">
+                        <i class="fa-solid fa-plus"></i> Pengajuan
+                    </button>
+                </form>
+            @endif
         @endif
 
         <div class="card-header-right">

@@ -77,6 +77,18 @@ class ArsipUtamaController extends Controller
 
             $data['user_id'] = Auth::id();
 
+            // Cek apakah arsip dengan nama, kategori, dan tahun yang sama sudah ada
+            $existingArsip = ArsipUtama::where('nama_arsip', $data['nama_arsip'])
+                ->where('kategori_arsip_id', $data['kategori_arsip_id'])
+                ->where('tahun_arsip', $data['tahun_arsip'])
+                ->first();
+
+            if ($existingArsip) {
+                Alert::warning('Peringatan', 'Data arsip dengan nama, kategori, dan tahun tersebut sudah pernah ditambahkan.')
+                    ->autoclose(5000)->toToast()->timerProgressBar();
+                return redirect()->back()->withInput();
+            }
+
             if ($request->hasFile('file_arsip')) {
                 $uploaded = $request->file('file_arsip');
                 $safeOriginal = preg_replace('/[^A-Za-z0-9\.\-_ ]/', '', $uploaded->getClientOriginalName());
@@ -153,6 +165,19 @@ class ArsipUtamaController extends Controller
             }
 
             $data['user_id'] = Auth::id();
+
+            // Cek apakah arsip lain dengan nama, kategori, dan tahun yang sama sudah ada
+            $existingArsip = ArsipUtama::where('nama_arsip', $data['nama_arsip'])
+                ->where('kategori_arsip_id', $data['kategori_arsip_id'])
+                ->where('tahun_arsip', $data['tahun_arsip'])
+                ->where('id', '!=', $arsiputama->id)
+                ->first();
+
+            if ($existingArsip) {
+                Alert::warning('Peringatan', 'Data arsip dengan nama, kategori, dan tahun tersebut sudah ada.')
+                    ->autoclose(5000)->toToast()->timerProgressBar();
+                return redirect()->back()->withInput();
+            }
 
             if ($request->hasFile('file_arsip')) {
                 // Hapus file lama di Google Drive

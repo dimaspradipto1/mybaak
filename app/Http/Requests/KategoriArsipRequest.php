@@ -21,8 +21,10 @@ class KategoriArsipRequest extends FormRequest
      */
     public function rules(): array
     {
+        $kategoriId = $this->route('kategoriarsip') ? ($this->route('kategoriarsip')->id ?? $this->route('kategoriarsip')) : null;
+
         return [
-            'kategori_arsip' => 'required|string|max:255',
+            'kategori_arsip' => 'required|string|max:255|unique:kategori_arsips,kategori_arsip,' . $kategoriId,
         ];
     }
 
@@ -30,6 +32,7 @@ class KategoriArsipRequest extends FormRequest
     {
         return [
             'kategori_arsip.required' => 'Nama kategori arsip wajib diisi.',
+            'kategori_arsip.unique'   => 'Kategori arsip ini sudah ada, tidak boleh duplikat.',
             'kategori_arsip.string'   => 'Nama kategori arsip harus berupa teks.',
             'kategori_arsip.max'      => 'Nama kategori arsip maksimal 255 karakter.',
         ];

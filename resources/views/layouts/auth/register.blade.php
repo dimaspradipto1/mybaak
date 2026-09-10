@@ -285,6 +285,22 @@
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
         });
+
+        const regForm = document.querySelector('form');
+        if (regForm) {
+            regForm.addEventListener('submit', function(e) {
+                const btn = this.querySelector('button[type="submit"]');
+                if (this.dataset.submitting === 'true') {
+                    e.preventDefault();
+                    return false;
+                }
+                this.dataset.submitting = 'true';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'Mendaftar...';
+                }
+            });
+        }
     </script>
 </body>
 

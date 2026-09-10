@@ -120,9 +120,12 @@ class UserSeeder extends Seeder
             $userData['created_at'] = now();
             $userData['updated_at'] = now();
 
-            $user = \App\Models\User::create($userData);
+            $user = \App\Models\User::updateOrCreate(
+                ['email' => $userData['email']],
+                $userData
+            );
 
-            \App\Models\Profile::create([
+            \App\Models\Profile::firstOrCreate([
                 'users_id' => $user->id
             ]);
         }

@@ -53,6 +53,17 @@ class SopAkademikController extends Controller
                 $data['fakultas'] = Auth::user()->fakultas;
             }
 
+            // Cek apakah SOP dengan nama dan fakultas yang sama sudah ada
+            $existing = SopAkademik::where('nama_sop', $data['nama_sop'])
+                ->where('fakultas', $data['fakultas'])
+                ->first();
+
+            if ($existing) {
+                Alert::warning('Peringatan', 'Data SOP Akademik dengan nama dan fakultas tersebut sudah ada.')
+                    ->autoclose(5000)->toToast()->timerProgressBar();
+                return redirect()->back()->withInput();
+            }
+
             if ($request->hasFile('file')) {
                 $uploaded = $request->file('file');
                 $safeOriginal = preg_replace('/[^A-Za-z0-9\.\-_ ]/', '', $uploaded->getClientOriginalName());
@@ -139,6 +150,18 @@ class SopAkademikController extends Controller
             // Set fakultas otomatis jika tidak ada di request
             if (!isset($data['fakultas']) || empty($data['fakultas'])) {
                 $data['fakultas'] = Auth::user()->fakultas;
+            }
+
+            // Cek apakah SOP lain dengan nama dan fakultas yang sama sudah ada
+            $existing = SopAkademik::where('nama_sop', $data['nama_sop'])
+                ->where('fakultas', $data['fakultas'])
+                ->where('id', '!=', $sopakademik->id)
+                ->first();
+
+            if ($existing) {
+                Alert::warning('Peringatan', 'Data SOP Akademik dengan nama dan fakultas tersebut sudah ada.')
+                    ->autoclose(5000)->toToast()->timerProgressBar();
+                return redirect()->back()->withInput();
             }
 
             if ($request->hasFile('file')) {

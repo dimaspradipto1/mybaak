@@ -51,14 +51,10 @@ class DosenDataTable extends DataTable
             })
             ->rawColumns(['action', 'programStudi.program_studi'])
             ->setRowId('id')
-            ->filterColumn('users_name', function ($query, $keyword) {
-                $query->whereHas('user', function ($query) use ($keyword) {
-                    $query->where('name', 'like', '%' . $keyword . '%');
+            ->filterColumn('programStudi.program_studi', function ($query, $keyword) {
+                $query->whereHas('programStudi', function ($q) use ($keyword) {
+                    $q->where('program_studi', 'like', '%' . $keyword . '%');
                 });
-            })
-            ->orderColumn('users_name', function ($query, $order) {
-                $query->join('users', 'dosen.users_id', '=', 'users.id')
-                    ->orderBy('users.name', $order);
             });
     }
 

@@ -25,16 +25,33 @@
                     </div>
 
                     @if (auth()->user()->is_mahasiswa)
+                        @php
+                            $hasPendingSuratAktif = \App\Models\SuratAktif::where('users_id', auth()->id())->where('status', 'pending')->exists();
+                            $hasPendingSuratAkademik = \App\Models\SuratAkademik::where('users_id', auth()->id())->where('status', 'pending')->exists();
+                        @endphp
                         <div class="d-inline-flex ml-2">
-                            <form action="{{ route('suratAktif.pengajuan') }}" method="POST" style="display: inline;">
-                                @csrf
-                                <button type="submit" class="btn btn-success btn-xs font-weight-bold px-3 py-1 shadow-sm border-0 mr-1" style="background-color: #046B26; border-radius: 20px; font-size: 10px; height: 32px;">
-                                    <i class="fa-solid fa-plus mr-1"></i> PENGAJUAN SURAT AKTIF
+                            @if($hasPendingSuratAktif)
+                                <button type="button" class="btn btn-warning btn-xs font-weight-bold px-3 py-1 shadow-sm border-0 mr-1 text-white" disabled style="border-radius: 20px; font-size: 10px; height: 32px;" title="Pengajuan sedang diproses">
+                                    <i class="fa-solid fa-clock mr-1"></i> SURAT AKTIF SEDANG DIPROSES
                                 </button>
-                            </form>
-                            <a href="{{ route('suratAkademik.create') }}" class="btn btn-secondary btn-xs font-weight-bold px-3 py-1 shadow-sm border-0" style="border-radius: 20px; font-size: 10px; height: 32px; line-height: 24px;">
-                                <i class="fa-solid fa-plus mr-1"></i> PENGAJUAN SURAT AKADEMIK
-                            </a>
+                            @else
+                                <form action="{{ route('suratAktif.pengajuan') }}" method="POST" style="display: inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success btn-xs font-weight-bold px-3 py-1 shadow-sm border-0 mr-1" style="background-color: #046B26; border-radius: 20px; font-size: 10px; height: 32px;">
+                                        <i class="fa-solid fa-plus mr-1"></i> PENGAJUAN SURAT AKTIF
+                                    </button>
+                                </form>
+                            @endif
+
+                            @if($hasPendingSuratAkademik)
+                                <button type="button" class="btn btn-warning btn-xs font-weight-bold px-3 py-1 shadow-sm border-0 text-white" disabled style="border-radius: 20px; font-size: 10px; height: 32px;" title="Pengajuan sedang diproses">
+                                    <i class="fa-solid fa-clock mr-1"></i> SURAT AKADEMIK SEDANG DIPROSES
+                                </button>
+                            @else
+                                <a href="{{ route('suratAkademik.create') }}" class="btn btn-secondary btn-xs font-weight-bold px-3 py-1 shadow-sm border-0" style="border-radius: 20px; font-size: 10px; height: 32px; line-height: 24px;">
+                                    <i class="fa-solid fa-plus mr-1"></i> PENGAJUAN SURAT AKADEMIK
+                                </a>
+                            @endif
                         </div>
                     @endif
                 </div>

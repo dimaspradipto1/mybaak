@@ -55,6 +55,18 @@ class PedomanController extends Controller
                 $data['fakultas'] = Auth::user()->fakultas;
             }
 
+            // Cek apakah pedoman dengan nama, tahun, dan fakultas yang sama sudah ada
+            $existing = Pedoman::where('nama_pedoman', $data['nama_pedoman'])
+                ->where('tahun', $data['tahun'])
+                ->where('fakultas', $data['fakultas'])
+                ->first();
+
+            if ($existing) {
+                Alert::warning('Peringatan', 'Data pedoman dengan nama, tahun, dan fakultas tersebut sudah ada.')
+                    ->autoclose(5000)->toToast()->timerProgressBar();
+                return redirect()->back()->withInput();
+            }
+
             if ($request->hasFile('file')) {
                 $uploaded = $request->file('file');
                 $safeOriginal = preg_replace('/[^A-Za-z0-9\.\-_ ]/', '', $uploaded->getClientOriginalName());
@@ -142,6 +154,19 @@ class PedomanController extends Controller
             // Set fakultas otomatis jika tidak ada di request
             if (!isset($data['fakultas']) || empty($data['fakultas'])) {
                 $data['fakultas'] = Auth::user()->fakultas;
+            }
+
+            // Cek apakah pedoman lain dengan nama, tahun, dan fakultas yang sama sudah ada
+            $existing = Pedoman::where('nama_pedoman', $data['nama_pedoman'])
+                ->where('tahun', $data['tahun'])
+                ->where('fakultas', $data['fakultas'])
+                ->where('id', '!=', $pedoman->id)
+                ->first();
+
+            if ($existing) {
+                Alert::warning('Peringatan', 'Data pedoman dengan nama, tahun, dan fakultas tersebut sudah ada.')
+                    ->autoclose(5000)->toToast()->timerProgressBar();
+                return redirect()->back()->withInput();
             }
 
             if ($request->hasFile('file')) {
