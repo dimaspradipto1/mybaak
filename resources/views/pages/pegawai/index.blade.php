@@ -3,17 +3,20 @@
 @section('title', 'Pegawai')
 @section('content')
     <div class="card border-0 shadow-sm" style="border-radius: 15px; overflow: hidden; border-top: 5px solid #046B26 !important;">
-        <div class="card-header bg-white border-bottom py-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <div style="width: 4px; height: 25px; background: #046B26; border-radius: 2px;" class="mr-2"></div>
-                    <h5 class="m-0 font-weight-bold text-dark">Data Pegawai</h5>
+        <div class="card-header bg-white border-bottom py-2 px-3">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    @can('pegawai_create')
+                    <div class="d-inline-flex shadow-sm overflow-hidden" style="border: 1px solid #e3e6f0; border-radius: 30px;">
+                        <a href="{{ route('pegawai.create') }}" class="btn btn-success btn-xs font-weight-bold px-3 py-1 border-0" style="background-color: #046B26; color: white; font-size: 10px; height: 32px; line-height: 24px; border-radius: 30px;">
+                            <i class="fa-solid fa-plus mr-1"></i> TAMBAH
+                        </a>
+                    </div>
+                    @endcan
                 </div>
-                @can('pegawai_create')
-                <a href="{{ route('pegawai.create') }}" class="btn btn-success btn-sm font-weight-bold px-3 py-2 shadow-sm rounded-lg border-0" style="background-color: #046B26;">
-                    <i class="fas fa-plus mr-1"></i> TAMBAH
-                </a>
-                @endcan
+                <div class="col-md-4 text-right">
+                    <h5 class="m-0 font-weight-bold text-dark" style="font-size: 1rem;">Data Pegawai</h5>
+                </div>
             </div>
         </div>
 

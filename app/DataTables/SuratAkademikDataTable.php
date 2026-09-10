@@ -102,6 +102,12 @@ class SuratAkademikDataTable extends DataTable
     {
         $query = $model->newQuery()->with(['user', 'programStudi'])->latest('id');
 
+        if ($status = request('status_filter')) {
+            if (in_array($status, ['pending', 'diterima', 'ditolak'])) {
+                $query->where('status', $status);
+            }
+        }
+
         $user = Auth::user();
 
         // Admin, Superadmin & siapa saja yang punya izin view → lihat semua
@@ -112,10 +118,10 @@ class SuratAkademikDataTable extends DataTable
 
         if ($user->is_mahasiswa) {
             // Mahasiswa hanya lihat miliknya
-            $query->where('users_id', Auth::id());
+            return $query->where('users_id', Auth::id());
         }
 
-        return $query;
+        return $query->whereRaw('1=0');
     }
 
     /**
@@ -129,10 +135,9 @@ class SuratAkademikDataTable extends DataTable
         return $this->builder()
             ->setTableId('suratakademik-table')
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->minifiedAjax('', 'data.status_filter = window.selectedStatusFilter || "";')
             ->orderBy($canBulk ? 4 : 3, 'desc')
             ->selectStyleSingle()
-            ->scrollX(true)
             ->parameters([
                 'autoWidth' => false,
             ])

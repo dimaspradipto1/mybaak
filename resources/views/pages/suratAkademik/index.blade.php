@@ -21,42 +21,155 @@
         text-align: center !important;
         white-space: nowrap !important;
     }
+
+    /* Bulk Buttons: Never blurry / faded on hover or disabled */
+    #btn-bulk-status {
+        background-color: #f39c12 !important;
+        border: none !important;
+        color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+    }
+    #btn-bulk-status:hover,
+    #btn-bulk-status:focus,
+    #btn-bulk-status:active {
+        background-color: #d68910 !important;
+        border-color: #d68910 !important;
+        color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+        box-shadow: none !important;
+    }
+    #btn-bulk-status:disabled {
+        background-color: #f39c12 !important;
+        color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+        cursor: not-allowed !important;
+    }
+
+    #btn-bulk-delete {
+        background-color: #dc3545 !important;
+        border: none !important;
+        border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
+        color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+    }
+    #btn-bulk-delete:hover,
+    #btn-bulk-delete:focus,
+    #btn-bulk-delete:active {
+        background-color: #bd2130 !important;
+        border-color: #bd2130 !important;
+        color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+        box-shadow: none !important;
+    }
+    #btn-bulk-delete:disabled {
+        background-color: #dc3545 !important;
+        color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+        cursor: not-allowed !important;
+    }
+    #btn-bulk-status .badge,
+    #btn-bulk-delete .badge {
+        background-color: #ffffff !important;
+        opacity: 1 !important;
+    }
+
+    /* Status Filter Buttons */
+    .btn-filter-status {
+        background-color: #ffffff !important;
+        color: #5a5c69 !important;
+        font-weight: 600;
+        cursor: pointer;
+        opacity: 1 !important;
+        filter: none !important;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-filter-status:hover {
+        background-color: #f1f3f9 !important;
+        color: #2e384d !important;
+        opacity: 1 !important;
+        filter: none !important;
+    }
+    .btn-filter-status.active {
+        color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+    }
+    .btn-filter-status.active i {
+        color: #ffffff !important;
+    }
+    .btn-filter-status.active[data-status=""] {
+        background-color: #34495e !important;
+    }
+    .btn-filter-status.active[data-status="pending"] {
+        background-color: #f39c12 !important;
+    }
+    .btn-filter-status.active[data-status="diterima"] {
+        background-color: #28a745 !important;
+    }
+    .btn-filter-status.active[data-status="ditolak"] {
+        background-color: #dc3545 !important;
+    }
 </style>
 @endpush
 
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
-            @can('surat_akademik_create')
-                <a href="{{ route('suratAkademik.create') }}" class="btn btn-primary rounded btn-sm d-inline-flex align-items-center text-nowrap" style="white-space: nowrap;">
-                    <i class="fa-solid fa-plus mr-1"></i> Tambah
-                </a>
-                <button type="button" class="btn btn-info rounded btn-sm text-white d-inline-flex align-items-center text-nowrap" data-toggle="modal" data-target="#importModalAkademik" style="white-space: nowrap;">
-                    <i class="fa-solid fa-file-excel mr-1"></i> Import
-                </button>
-            @endcan
+<div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; border-top: 5px solid #046B26 !important;">
+    <div class="card-header bg-white border-bottom py-2 px-3">
+        <div class="row align-items-center">
+            <div class="col-lg-9 col-md-8 d-flex align-items-center flex-wrap" style="gap: 8px;">
+                @can('surat_akademik_create')
+                <div class="d-inline-flex shadow-sm overflow-hidden" style="border: 1px solid #e3e6f0; border-radius: 30px;">
+                    <a href="{{ route('suratAkademik.create') }}" class="btn btn-success btn-xs font-weight-bold px-3 py-1 border-0" style="background-color: #046B26; color: white; font-size: 10px; height: 32px; line-height: 24px; border-top-left-radius: 30px; border-bottom-left-radius: 30px;">
+                        <i class="fa-solid fa-plus mr-1"></i> TAMBAH
+                    </a>
+                    <button type="button" class="btn btn-white btn-xs px-3 py-1 border-0 border-left rounded-0 text-primary" data-toggle="modal" data-target="#importModalAkademik" style="font-size: 10px; height: 32px; line-height: 24px;">
+                        <i class="fa-solid fa-file-import mr-1"></i> IMPOR EXCEL
+                    </button>
+                    <a href="{{ route('suratAkademik.export-template') }}" class="btn btn-white btn-xs px-3 py-1 border-0 border-left font-weight-bold" style="font-size: 10px; height: 32px; line-height: 24px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; color: #28a745;">
+                        <i class="fa-solid fa-file-download mr-1"></i> DOWNLOAD FORMAT
+                    </a>
+                </div>
+                @endcan
 
-            @if(auth()->user()->is_admin || auth()->user()->is_superadmin || auth()->user()->is_staffbaak || auth()->user()->can('surat_akademik_edit') || auth()->user()->can('surat_akademik_delete'))
-                <button type="button" class="btn btn-warning rounded btn-sm text-white d-inline-flex align-items-center text-nowrap" id="btn-bulk-status" data-toggle="modal" data-target="#modalBulkStatusAkademik" disabled style="white-space: nowrap;">
-                    <i class="fa-solid fa-pen-to-square mr-1"></i> Update Status
-                    <span class="badge badge-light text-dark font-weight-bold ml-1 selected-count" style="font-size: 11px; padding: 2px 7px; border-radius: 10px;">0</span>
-                </button>
-                <button type="button" class="btn btn-danger rounded btn-sm text-white d-inline-flex align-items-center text-nowrap" id="btn-bulk-delete" disabled style="white-space: nowrap;">
-                    <i class="fa-solid fa-trash-can mr-1"></i> Hapus Terpilih
-                    <span class="badge badge-light text-danger font-weight-bold ml-1 selected-count" style="font-size: 11px; padding: 2px 7px; border-radius: 10px;">0</span>
-                </button>
-            @endif
-        </div>
+                @if(auth()->user()->is_admin || auth()->user()->is_superadmin || auth()->user()->is_staffbaak || auth()->user()->can('surat_akademik_edit') || auth()->user()->can('surat_akademik_delete'))
+                <div class="d-inline-flex shadow-sm overflow-hidden" style="border: 1px solid #e3e6f0; border-radius: 30px;">
+                    <button type="button" class="btn btn-warning btn-xs font-weight-bold px-3 py-1 border-0 text-white d-inline-flex align-items-center" id="btn-bulk-status" data-toggle="modal" data-target="#modalBulkStatusAkademik" disabled style="font-size: 10px; height: 32px; line-height: 24px; border-top-left-radius: 30px; border-bottom-left-radius: 30px;">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i> UPDATE STATUS
+                        <span class="badge badge-light text-dark font-weight-bold ml-1 selected-count" style="font-size: 10px; padding: 2px 6px; border-radius: 10px;">0</span>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-xs font-weight-bold px-3 py-1 border-0 border-left text-white d-inline-flex align-items-center" id="btn-bulk-delete" disabled style="font-size: 10px; height: 32px; line-height: 24px; border-top-right-radius: 30px; border-bottom-right-radius: 30px;">
+                        <i class="fa-solid fa-trash-can mr-1"></i> HAPUS TERPILIH
+                        <span class="badge badge-light text-danger font-weight-bold ml-1 selected-count" style="font-size: 10px; padding: 2px 6px; border-radius: 10px;">0</span>
+                    </button>
+                </div>
+                @endif
 
-        <div class="card-header-right">
-            <ul class="list-unstyled card-option">
-                <li><i class="fa fa fa-wrench open-card-option"></i></li>
-                <li><i class="fa fa-window-maximize full-card"></i></li>
-                <li><i class="fa fa-minus minimize-card"></i></li>
-                <li><i class="fa fa-refresh reload-card"></i></li>
-                <li><i class="fa fa-trash close-card"></i></li>
-            </ul>
+                <!-- Filter Status Pill Group -->
+                <div class="d-inline-flex shadow-sm overflow-hidden" style="border: 1px solid #e3e6f0; border-radius: 30px;">
+                    <button type="button" class="btn btn-white btn-xs px-3 py-1 border-0 btn-filter-status active" data-status="" style="font-size: 10px; height: 32px; line-height: 24px; border-top-left-radius: 30px; border-bottom-left-radius: 30px;" title="Tampilkan Semua Status">
+                        <i class="fa-solid fa-list mr-1"></i> SEMUA
+                    </button>
+                    <button type="button" class="btn btn-white btn-xs px-3 py-1 border-0 border-left btn-filter-status" data-status="pending" style="font-size: 10px; height: 32px; line-height: 24px;" title="Filter Status Pending">
+                        <i class="fa-solid fa-clock mr-1 text-warning"></i> PENDING
+                    </button>
+                    <button type="button" class="btn btn-white btn-xs px-3 py-1 border-0 border-left btn-filter-status" data-status="diterima" style="font-size: 10px; height: 32px; line-height: 24px;" title="Filter Status Diterima">
+                        <i class="fa-solid fa-circle-check mr-1 text-success"></i> DITERIMA
+                    </button>
+                    <button type="button" class="btn btn-white btn-xs px-3 py-1 border-0 border-left btn-filter-status" data-status="ditolak" style="font-size: 10px; height: 32px; line-height: 24px; border-top-right-radius: 30px; border-bottom-right-radius: 30px;" title="Filter Status Ditolak">
+                        <i class="fa-solid fa-circle-xmark mr-1 text-danger"></i> DITOLAK
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-4 text-right">
+                <h5 class="m-0 font-weight-bold text-dark" style="font-size: 1rem;">Data Surat Akademik</h5>
+            </div>
         </div>
     </div>
       
@@ -65,7 +178,7 @@
         <div class="table-responsive">
             {{ $dataTable->table([
                     'class' => 'table table-striped table-bordered',
-                    'style' => 'width:100%; overflow-x: auto',
+                    'style' => 'width: 100%;',
                 ]) }}
         </div>
     </div>
@@ -151,6 +264,9 @@
 @endsection
 
 @push('scripts')
+    <script>
+        window.selectedStatusFilter = '';
+    </script>
     @if(app()->environment('production'))
         {!! str_replace('http:', 'https:', $dataTable->scripts()) !!}
     @else
@@ -160,6 +276,31 @@
     <script>
         $(document).ready(function() {
             var selectedIds = new Set();
+
+            // Status filter button click handler
+            $('.btn-filter-status').on('click', function(e) {
+                e.preventDefault();
+                var status = $(this).data('status');
+                if (window.selectedStatusFilter === status) {
+                    return;
+                }
+                window.selectedStatusFilter = status;
+
+                $('.btn-filter-status').removeClass('active');
+                $(this).addClass('active');
+
+                // Reset seleksi checkbox saat filter berganti
+                selectedIds.clear();
+                updateBulkButtons();
+                syncSelectAllCheckbox();
+
+                // Reload data di tabel otomatis sesuai status yang dipilih
+                if (window.LaravelDataTables && window.LaravelDataTables['suratakademik-table']) {
+                    window.LaravelDataTables['suratakademik-table'].draw();
+                } else {
+                    $('#suratakademik-table').DataTable().draw();
+                }
+            });
 
             function updateBulkButtons() {
                 var count = selectedIds.size;

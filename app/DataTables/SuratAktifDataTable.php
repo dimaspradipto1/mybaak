@@ -132,6 +132,12 @@ class SuratAktifDataTable extends DataTable
             ->with(['users', 'programStudi'])
             ->latest('id'); // eager load biar cepat & urutkan terbaru (DESC)
 
+        if ($status = request('status_filter')) {
+            if (in_array($status, ['pending', 'diterima', 'ditolak'])) {
+                $query->where('status', $status);
+            }
+        }
+
         $user = Auth::user();
 
         // Admin, Superadmin & siapa saja yang punya izin view → lihat semua
@@ -160,10 +166,9 @@ class SuratAktifDataTable extends DataTable
         return $this->builder()
             ->setTableId('surataktif-table')
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->minifiedAjax('', 'data.status_filter = window.selectedStatusFilter || "";')
             ->orderBy($canBulk ? 4 : 3, 'desc')
             ->selectStyleSingle()
-            ->scrollX(true)
             ->parameters([
                 'autoWidth' => false,
             ])
