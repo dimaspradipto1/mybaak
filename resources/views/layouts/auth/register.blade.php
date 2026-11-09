@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register SIBAAK</title>
+    <title>Register MYBAAK</title>
     <link rel="icon" href="{{ asset('assets/images/logouis.png') }}" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -255,7 +255,7 @@
             </div> --}}
         </form>
         <div class="new-to-baak">
-            <p>Baru di SIBAAK? <a href="{{ route('login') }}">Masuk sekarang.</a></p>
+            <p>Baru di MYBAAK? <a href="{{ route('login') }}">Masuk sekarang.</a></p>
         </div>
     </div>
 

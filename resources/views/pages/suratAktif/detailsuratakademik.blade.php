@@ -125,7 +125,7 @@
             <h1>UNIVERSITAS IBNU SINA BATAM</h1>
 
             <!-- Naskah Dinas Title -->
-            <h2 class="title">SISTEM INFORMASI BAAK (SIBAAK)</h2>
+            <h2 class="title">SISTEM INFORMASI BAAK (MYBAAK)</h2>
 
             <!-- Informasi Surat -->
             <div class="details">

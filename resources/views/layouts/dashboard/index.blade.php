@@ -22,7 +22,7 @@
                     <div class="row align-items-center">
                         <div class="col-md-8">
                             <h3 class="font-weight-bold mb-1">Halo, {{ auth()->user()->name }}! 👋</h3>
-                            <p class="mb-0 opacity-75">Selamat datang di Panel Pengelolaan Arsip SIBAAK. Berikut adalah
+                            <p class="mb-0 opacity-75">Selamat datang di Panel Pengelolaan Arsip MYBAAK. Berikut adalah
                                 ringkasan data yang Anda kelola hari ini.</p>
                         </div>
                         <div class="col-md-4 text-right d-none d-md-block">

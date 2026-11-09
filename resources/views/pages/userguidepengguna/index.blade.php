@@ -20,7 +20,7 @@
                 <hr>
                 <br>
                 <p style="color: #9F1717; font-weight: bold; font-size: 12px;">Catatan: Data pada halaman ini didasarkan
-                    pada aktivitas pengguna di website SIBAAK</p>
+                    pada aktivitas pengguna di website MYBAAK</p>
                 <br>
                 <h4 style="color: #104819; font-weight: bold; font-size: 30px;">FAQ</h4>
                 <div class="card-block accordion-block">
