@@ -23,6 +23,7 @@
     <!-- font-awesome -->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/font-awesome-n.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/font-awesome.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- scrollbar.css -->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/jquery.mCustomScrollbar.css') }}">
     <!-- Style.css -->
@@ -257,7 +258,6 @@
                                 <div class="page-wrapper">
                                     <!-- Page-body start -->
                                     <div class="page-body">
-                                        @include('sweetalert::alert')
                                         @yield('content')
                                     </div>
                                     <!-- Page-body end -->
@@ -302,6 +302,7 @@
 
     {{-- SweetAlert2 JS --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @include('sweetalert::alert')
 
     {{-- SweetAlert2 Helper & Global Confirm Handler --}}
     <script>
