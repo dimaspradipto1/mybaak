@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Admin',
                 'email' => 'admin@uis.ac.id',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('mybaakuis'),
                 'role_id' => $roles['ADMIN'] ?? null,
                 'is_active' => true,
             ],
