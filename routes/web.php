@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ArsipUtamaController;
 use App\Http\Controllers\ArtikelController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DosenController;
 use App\Http\Controllers\FAQController;
@@ -127,6 +128,15 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
     Route::post('/wasdalbin/toggle-status', [WasdalbinController::class, 'toggleStatus'])->name('wasdalbin.toggle-status');
     Route::resource('arsiputama', ArsipUtamaController::class);
     Route::resource('unitkerja', UnitKerjaController::class);
+
+    // Backup Database & Storage
+    Route::prefix('admin-backup')->name('backup.')->group(function () {
+        Route::get('/', [BackupController::class, 'index'])->name('index');
+        Route::get('/export-database', [BackupController::class, 'exportDatabase'])->name('export-database');
+        Route::post('/import-database', [BackupController::class, 'importDatabase'])->name('import-database');
+        Route::get('/export-storage', [BackupController::class, 'exportStorage'])->name('export-storage');
+        Route::post('/import-storage', [BackupController::class, 'importStorage'])->name('import-storage');
+    });
     Route::resource('artikel', ArtikelController::class);
     Route::resource('role', RoleController::class);
     Route::get('/role/{role}/permission', [RoleController::class, 'editPermission'])->name('role.edit-permission');

@@ -121,6 +121,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'Tambah Unit Kerja', 'slug' => 'unit_kerja_create', 'module' => 'Master Data'],
             ['name' => 'Edit Unit Kerja', 'slug' => 'unit_kerja_edit', 'module' => 'Master Data'],
             ['name' => 'Hapus Unit Kerja', 'slug' => 'unit_kerja_delete', 'module' => 'Master Data'],
+            ['name' => 'Backup Database & Storage', 'slug' => 'backup_view', 'module' => 'Master Data'],
 
             // Rekapitulasi
             ['name' => 'Lihat Rekapitulasi Arsip', 'slug' => 'rekapitulasi_arsip_view', 'module' => 'Rekapitulasi'],

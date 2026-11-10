@@ -163,8 +163,8 @@
             @endcanany
 
             {{-- Master Data --}}
-            @canany(['role_view', 'users_view', 'pegawai_view', 'dosen_view', 'mahasiswa_view', 'jenis_sk_view', 'kategori_arsip_view', 'tahun_akademik_view', 'program_studi_view', 'unit_kerja_view'])
-            <li class="has-sub {{ Str::startsWith($currentRoute, ['role', 'users', 'pegawai', 'dosen', 'mahasiswa', 'jenissk', 'kategoriarsip', 'tahunAkademik', 'programStudi', 'unitkerja']) ? 'active' : '' }}">
+            @canany(['role_view', 'users_view', 'pegawai_view', 'dosen_view', 'mahasiswa_view', 'jenis_sk_view', 'kategori_arsip_view', 'tahun_akademik_view', 'program_studi_view', 'unit_kerja_view', 'backup_view'])
+            <li class="has-sub {{ Str::startsWith($currentRoute, ['role', 'users', 'pegawai', 'dosen', 'mahasiswa', 'jenissk', 'kategoriarsip', 'tahunAkademik', 'programStudi', 'unitkerja', 'backup']) ? 'active' : '' }}">
                 <a href="javascript:void(0)"><i class="fa-solid fa-database"></i> Master Data</a>
                 <ul class="uis-submenu">
                     @can('role_view')<li><a href="{{ route('role.index') }}"><i class="fa-solid fa-users-gear"></i> Role Akses</a></li>@endcan
@@ -177,6 +177,7 @@
                     @can('tahun_akademik_view')<li><a href="{{ route('tahunAkademik.index') }}"><i class="fa-solid fa-calendar-days"></i> Tahun Akademik</a></li>@endcan
                     @can('program_studi_view')<li><a href="{{ route('programStudi.index') }}"><i class="fa-solid fa-folder-closed"></i> Program Studi</a></li>@endcan
                     @can('unit_kerja_view')<li><a href="{{ route('unitkerja.index') }}"><i class="fa-solid fa-sitemap"></i> Unit Kerja</a></li>@endcan
+                    @can('backup_view')<li><a href="{{ route('backup.index') }}"><i class="fa-solid fa-server"></i> Backup Database & Storage</a></li>@endcan
                 </ul>
             </li>
             @endcanany

@@ -182,7 +182,7 @@
         </ul>
         @endcan
 
-        @canany(['role_view', 'users_view', 'pegawai_view', 'dosen_view', 'mahasiswa_view', 'jenis_sk_view', 'kategori_arsip_view', 'tahun_akademik_view', 'program_studi_view'])
+        @canany(['role_view', 'users_view', 'pegawai_view', 'dosen_view', 'mahasiswa_view', 'jenis_sk_view', 'kategori_arsip_view', 'tahun_akademik_view', 'program_studi_view', 'unit_kerja_view', 'backup_view'])
             <div class="pcoded-navigation-label">Master</div>
             <ul class="pcoded-item pcoded-left-item">
                 <li class="pcoded-hasmenu ">
@@ -278,6 +278,15 @@
                             <a href="{{ route('unitkerja.index') }}" class="waves-effect waves-dark">
                                 <span class="pcoded-micon"><i class="fa-solid fa-sitemap"></i></span>
                                 <span class="pcoded-mtext text-capitalize">unit kerja</span>
+                                <span class="pcoded-mcaret"></span>
+                            </a>
+                        </li>
+                        @endcan
+                        @can('backup_view')
+                        <li class="">
+                            <a href="{{ route('backup.index') }}" class="waves-effect waves-dark">
+                                <span class="pcoded-micon"><i class="fa-solid fa-server"></i></span>
+                                <span class="pcoded-mtext text-capitalize">backup database & storage</span>
                                 <span class="pcoded-mcaret"></span>
                             </a>
                         </li>
