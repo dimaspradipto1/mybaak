@@ -161,7 +161,7 @@
                         <div class="text-center mt-auto">
                             <img src="{{ asset('assets/images/user.png') }}" class="img-fluid opacity-50 mb-3"
                                 style="max-height: 120px;">
-                            <p class="small italic">Si-Baak System Version 2.0</p>
+                            <p class="small italic">MYBAAK System Version 2.0</p>
                         </div>
                     </div>
                 </div>
