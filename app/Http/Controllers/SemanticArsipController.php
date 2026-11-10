@@ -303,20 +303,22 @@ class SemanticArsipController extends Controller
                     });
                 })
                 ->get()
-                ->map(function ($item) {
+                ->map(function ($item) use ($getThumbnail) {
                     $item->type = 'Surat Aktif';
-                    $item->title = "Surat Keterangan Aktif (" . ($item->no_surat ?? 'Draft') . ")";
-                    $item->description = "Layanan surat keterangan aktif kuliah untuk mahasiswa " . ($item->users->name ?? '-') . ". NPM: " . $item->npm;
-                    $item->link = route('suratAktif.index', ['q' => $item->npm]);
+                    $noUrut = sprintf('%03d', (int) ($item->no_surat ?? $item->id));
+                    $item->title = "Surat Keterangan Aktif (No. {$noUrut})";
+                    $item->description = "Layanan surat keterangan aktif kuliah untuk mahasiswa " . ($item->users->name ?? '-') . ". NPM: " . $item->npm . ($item->file ? ' (Arsip Digital Tersedia di Google Drive)' : '');
+                    $item->link = $item->file ?: route('suratAktif.index', ['q' => $item->npm]);
                     $item->icon = 'fa-file-signature';
                     $item->color = 'text-success';
+                    $item->thumbnail = $item->file ? $getThumbnail($item->file) : null;
                     return $item;
                 });
 
             // 10. Search in Surat Akademik
             $suratAkademik = SuratAkademik::with(['user', 'programStudi'])
                 ->where(function ($q) use ($buildSearch, $query) {
-                    $buildSearch($q, ['npm', 'permohonan', 'semester', 'status_cuti', 'alasan_cuti', 'alamat', 'no_wa']);
+                    $buildSearch($q, ['no_surat', 'npm', 'permohonan', 'semester', 'status_cuti', 'alasan_cuti', 'alamat', 'no_wa']);
                     $q->orWhereHas('user', function ($sq) use ($query) {
                         $sq->where('name', 'like', "%{$query}%");
                     });
@@ -325,13 +327,15 @@ class SemanticArsipController extends Controller
                     });
                 })
                 ->get()
-                ->map(function ($item) {
+                ->map(function ($item) use ($getThumbnail) {
                     $item->type = 'Surat Akademik';
-                    $item->title = "Surat Layanan Akademik (" . ($item->permohonan ?? 'Pengajuan') . ")";
-                    $item->description = "Dokumen layanan akademik mahasiswa " . ($item->user->name ?? '-') . ". NPM: " . $item->npm;
-                    $item->link = route('suratAkademik.index', ['q' => $item->npm]);
+                    $noUrut = sprintf('%03d', (int) ($item->no_surat ?? $item->id));
+                    $item->title = "Surat Layanan Akademik (No. {$noUrut} - " . ($item->permohonan ?? 'Pengajuan') . ")";
+                    $item->description = "Dokumen layanan akademik mahasiswa " . ($item->user->name ?? '-') . ". NPM: " . $item->npm . ($item->file ? ' (Arsip Digital Tersedia di Google Drive)' : '');
+                    $item->link = $item->file ?: route('suratAkademik.index', ['q' => $item->npm]);
                     $item->icon = 'fa-file-lines';
                     $item->color = 'text-primary';
+                    $item->thumbnail = $item->file ? $getThumbnail($item->file) : null;
                     return $item;
                 });
 

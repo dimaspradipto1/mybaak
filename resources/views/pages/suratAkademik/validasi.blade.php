@@ -184,6 +184,13 @@
             <!-- Button untuk melihat detail -->
             <div class="footer">
                 <button onclick="window.location.href='{{ route('suratAkademik.show', $suratAkademik) }}'" class="btn">LIHAT DOKUMEN ASLI</button>
+                @if($suratAkademik->file)
+                    <div style="margin-top: 10px;">
+                        <a href="{{ $suratAkademik->file }}" target="_blank" class="btn" style="background: #008240; text-decoration: none; display: inline-block;">
+                            BUKA BERKAS ARSIP DI GOOGLE DRIVE
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

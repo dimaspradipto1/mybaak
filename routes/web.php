@@ -85,11 +85,15 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
     Route::post('/suratAktif/import', [SuratAktifController::class, 'import'])->name('suratAktif.import');
     Route::post('/suratAktif/bulk-delete', [SuratAktifController::class, 'bulkDelete'])->name('suratAktif.bulkDelete');
     Route::post('/suratAktif/bulk-update-status', [SuratAktifController::class, 'bulkUpdateStatus'])->name('suratAktif.bulkUpdateStatus');
+    Route::post('/suratAktif/{suratAktif}/upload-arsip', [SuratAktifController::class, 'uploadArsip'])->name('suratAktif.uploadArsip');
+    Route::post('/suratAktif/{suratAktif}/generate-arsip', [SuratAktifController::class, 'generateArsip'])->name('suratAktif.generateArsip');
     Route::resource('suratAktif', SuratAktifController::class);
     Route::get('/suratAkademik/export-template', [SuratAkademikController::class, 'exportTemplate'])->name('suratAkademik.export-template');
     Route::post('/suratAkademik/import', [SuratAkademikController::class, 'import'])->name('suratAkademik.import');
     Route::post('/suratAkademik/bulk-delete', [SuratAkademikController::class, 'bulkDelete'])->name('suratAkademik.bulkDelete');
     Route::post('/suratAkademik/bulk-update-status', [SuratAkademikController::class, 'bulkUpdateStatus'])->name('suratAkademik.bulkUpdateStatus');
+    Route::post('/suratAkademik/{suratAkademik}/upload-arsip', [SuratAkademikController::class, 'uploadArsip'])->name('suratAkademik.uploadArsip');
+    Route::post('/suratAkademik/{suratAkademik}/generate-arsip', [SuratAkademikController::class, 'generateArsip'])->name('suratAkademik.generateArsip');
     Route::resource('suratAkademik', SuratAkademikController::class);
     Route::get('/suratAkademik/{suratAkademik}/editStatus', [SuratAkademikController::class, 'editStatus'])->name('suratAkademik.editStatus');
     Route::put('/suratAkademik/{suratAkademik}/updateStatus', [SuratAkademikController::class, 'updateStatus'])->name('suratAkademik.updateStatus');

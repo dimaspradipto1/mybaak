@@ -256,6 +256,80 @@
     </div>
 </div>
 
+<!-- Modal Kelola Arsip Google Drive -->
+<div class="modal fade" id="modalKelolaArsip" tabindex="-1" role="dialog" aria-labelledby="modalKelolaArsipLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #00A551 0%, #008240 100%); border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                <h5 class="modal-title font-weight-bold" id="modalKelolaArsipLabel">
+                    <i class="fa-brands fa-google-drive mr-2"></i> Arsip Surat Layanan Akademik Google Drive
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 1;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="card bg-light border-0 mb-3" style="border-radius: 8px;">
+                    <div class="card-body p-3">
+                        <table class="table table-borderless table-sm mb-0" style="font-size: 13px;">
+                            <tr>
+                                <td style="width: 120px;" class="text-muted">Nomor Surat:</td>
+                                <td><strong id="modal-arsip-nomor">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Mahasiswa:</td>
+                                <td><strong id="modal-arsip-name">-</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Status Berkas:</td>
+                                <td><div id="modal-arsip-status"></div></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pilihan 1: Generate PDF Otomatis -->
+                <div class="p-3 border rounded mb-3 bg-white">
+                    <h6 class="font-weight-bold text-success mb-1" style="font-size: 13px;">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Opsi 1: Otomatis Buat & Arsipkan PDF
+                    </h6>
+                    <p class="text-muted small mb-2" style="font-size: 11px;">
+                        Sistem akan meng-generate PDF Formulir Layanan Akademik resmi dan menyimpannya langsung ke folder Google Drive arsip.
+                    </p>
+                    <form id="form-generate-arsip" method="POST" action="">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-success btn-block py-2 font-weight-bold shadow-sm" style="border-radius: 6px;">
+                            <i class="fa-solid fa-file-pdf mr-1"></i> Generate PDF & Simpan ke Arsip Drive
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Pilihan 2: Upload File Manual / Scan -->
+                <div class="p-3 border rounded bg-white">
+                    <h6 class="font-weight-bold text-primary mb-1" style="font-size: 13px;">
+                        <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Opsi 2: Upload Berkas Scan Manual
+                    </h6>
+                    <p class="text-muted small mb-2" style="font-size: 11px;">
+                        Unggah berkas / scan formulir bertanda tangan (.pdf, .jpg, .png, .docx). Nama file otomatis disesuaikan nomor urut & permohonan.
+                    </p>
+                    <form id="form-upload-arsip" method="POST" action="" enctype="multipart/form-data">
+                        @csrf
+                        <div class="form-group mb-2">
+                            <input type="file" name="file" class="form-control-file border p-1 rounded" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="font-size: 12px; width: 100%;">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary btn-block py-2 font-weight-bold shadow-sm" style="border-radius: 6px;">
+                            <i class="fa-solid fa-upload mr-1"></i> Unggah ke Google Drive
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Form Bulk Delete (Hidden) -->
 <form id="form-bulk-delete" action="{{ route('suratAkademik.bulkDelete') }}" method="POST" style="display: none;">
     @csrf
@@ -418,6 +492,28 @@
                     });
                     return false;
                 }
+            });
+
+            // Handler Modal Kelola Arsip Google Drive
+            $(document).on('click', '.btn-arsip-modal', function() {
+                var nomor = $(this).data('nomor');
+                var name = $(this).data('name');
+                var file = $(this).data('file');
+                var actionUpload = $(this).data('action-upload');
+                var actionGenerate = $(this).data('action-generate');
+
+                $('#modal-arsip-nomor').text(nomor);
+                $('#modal-arsip-name').text(name);
+                $('#form-upload-arsip').attr('action', actionUpload);
+                $('#form-generate-arsip').attr('action', actionGenerate);
+
+                if (file) {
+                    $('#modal-arsip-status').html('<a href="' + file + '" target="_blank" class="btn btn-sm btn-success text-white py-1 px-3 shadow-sm font-weight-bold" style="border-radius:20px; font-size:12px;"><i class="fa-brands fa-google-drive mr-1"></i> Buka Berkas Tersimpan</a>');
+                } else {
+                    $('#modal-arsip-status').html('<span class="badge badge-warning text-dark px-3 py-2" style="border-radius:20px; font-size:11px;"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Belum ada berkas diarsipkan</span>');
+                }
+
+                $('#modalKelolaArsip').modal('show');
             });
         });
     </script>

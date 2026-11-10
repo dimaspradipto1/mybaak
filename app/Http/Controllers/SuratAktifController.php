@@ -16,9 +16,17 @@ use RealRashid\SweetAlert\Facades\Alert;
 use App\Imports\SuratAktifImport;
 use App\Exports\SuratAktifTemplateExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Traits\HandleGoogleDrive;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\ArsipUtama;
+use App\Models\KategoriArsip;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class SuratAktifController extends Controller
 {
+    use HandleGoogleDrive;
     public function exportTemplate()
     {
         return Excel::download(new SuratAktifTemplateExport, 'template_surat_aktif.xlsx');
@@ -348,5 +356,167 @@ class SuratAktifController extends Controller
         $user = $pegawai ? $pegawai->user : null;
         $bulanRomawi = $this->getBulanRomawi();
         return view('pages.suratAktif.show', compact('suratAktif', 'no_surat', 'program_studi', 'bulanRomawi', 'user', 'pegawai'));
+    }
+
+    /**
+     * Upload berkas arsip surat aktif ke Google Drive dan sinkronkan ke Arsip.
+     */
+    public function uploadArsip(Request $request, SuratAktif $suratAktif)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:15360',
+        ]);
+
+        try {
+            $uploaded = $request->file('file');
+            $ext = $uploaded->getClientOriginalExtension();
+
+            $noUrut = sprintf('%03d', (int) ($suratAktif->no_surat ?? $suratAktif->id));
+            $bulanRomawi = $this->getBulanRomawi();
+            $tahun = $suratAktif->created_at ? $suratAktif->created_at->format('Y') : date('Y');
+            $nomorSurat = "{$noUrut}/UIS.B1/LL/{$bulanRomawi}/{$tahun}";
+            $nomorSuratClean = "{$noUrut}-UIS.B1-LL-{$bulanRomawi}-{$tahun}";
+            $mahasiswaName = Str::slug($suratAktif->users->name ?? 'mahasiswa', '_');
+
+            // Format nama berkas sesuai nomor urut dan nomor surat
+            $filename = "{$noUrut}_{$nomorSuratClean}_{$mahasiswaName}.{$ext}";
+
+            $service = $this->driveService();
+            $folderId = env('GOOGLE_DRIVE_SURAT_AKTIF_MAHASISWA_FOLDER_ID', '1OjALgLazwTvedOG9WthVjbr7Wozl3AX3');
+
+            if (!$folderId) {
+                throw new \Exception('GOOGLE_DRIVE_SURAT_AKTIF_MAHASISWA_FOLDER_ID tidak ditemukan di .env');
+            }
+
+            $fileMetadata = new \Google\Service\Drive\DriveFile([
+                'name' => $filename,
+                'parents' => [$folderId],
+            ]);
+
+            $content = File::get($uploaded->getRealPath());
+
+            $file = $service->files->create($fileMetadata, [
+                'data' => $content,
+                'uploadType' => 'multipart',
+                'fields' => 'id',
+            ]);
+
+            $fileId = $file->getId();
+            $this->makeDriveFilePublic($fileId);
+            $driveUrl = "https://drive.google.com/file/d/{$fileId}/view";
+
+            // Hapus file lama di Drive jika ada
+            if ($suratAktif->file) {
+                $this->deleteDriveFile($suratAktif->file);
+            }
+
+            $suratAktif->update(['file' => $driveUrl]);
+
+            // Sinkronkan ke Arsip Utama
+            $kategori = KategoriArsip::firstOrCreate(['kategori_arsip' => 'Surat Keterangan Aktif']);
+            ArsipUtama::updateOrCreate(
+                [
+                    'kategori_arsip_id' => $kategori->id,
+                    'nama_arsip' => "Surat Keterangan Aktif - No. {$nomorSurat} - " . ($suratAktif->users->name ?? '-'),
+                ],
+                [
+                    'user_id' => Auth::id() ?? ($suratAktif->users_id ?? 1),
+                    'tahun_arsip' => $tahun,
+                    'file_arsip' => $driveUrl,
+                    'is_active' => 1,
+                ]
+            );
+
+            Alert::success('Berhasil', "Berkas arsip {$filename} berhasil diunggah ke Google Drive.")
+                ->autoclose(4000)->toToast()->timerProgressBar();
+
+        } catch (\Throwable $e) {
+            Log::error('Upload Arsip Surat Aktif Error: ' . $e->getMessage());
+            Alert::error('Gagal', 'Gagal mengunggah berkas arsip: ' . $e->getMessage())
+                ->autoclose(5000)->toToast()->timerProgressBar();
+        }
+
+        return redirect()->back();
+    }
+
+    /**
+     * Otomatis generate PDF Surat Aktif dan simpan ke folder Google Drive Arsip.
+     */
+    public function generateArsip(SuratAktif $suratAktif)
+    {
+        try {
+            $no_surat = $suratAktif->no_surat;
+            $noUrut = sprintf('%03d', (int) ($no_surat ?? $suratAktif->id));
+            $program_studi = ProgramStudi::find($suratAktif->program_studi_id)->program_studi ?? '-';
+            $pegawai = \App\Models\Pegawai::where('jabatan', 'LIKE', '%BIRO ADMINISTRASI AKADEMIK%')->first();
+            $user = $pegawai ? $pegawai->user : null;
+            $bulanRomawi = $this->getBulanRomawi();
+            $tahun = $suratAktif->created_at ? $suratAktif->created_at->format('Y') : date('Y');
+
+            $nomorSurat = "{$noUrut}/UIS.B1/LL/{$bulanRomawi}/{$tahun}";
+            $nomorSuratClean = "{$noUrut}-UIS.B1-LL-{$bulanRomawi}-{$tahun}";
+            $mahasiswaName = Str::slug($suratAktif->users->name ?? 'mahasiswa', '_');
+
+            // Format nama berkas sesuai nomor urut dan nomor surat
+            $filename = "{$noUrut}_{$nomorSuratClean}_{$mahasiswaName}.pdf";
+
+            $pdf = Pdf::loadView('pages.suratAktif.pdf', compact('suratAktif', 'no_surat', 'program_studi', 'bulanRomawi', 'user', 'pegawai'));
+            $pdfContent = $pdf->output();
+
+            $service = $this->driveService();
+            $folderId = env('GOOGLE_DRIVE_SURAT_AKTIF_MAHASISWA_FOLDER_ID', '1OjALgLazwTvedOG9WthVjbr7Wozl3AX3');
+
+            if (!$folderId) {
+                throw new \Exception('GOOGLE_DRIVE_SURAT_AKTIF_MAHASISWA_FOLDER_ID tidak ditemukan di .env');
+            }
+
+            $fileMetadata = new \Google\Service\Drive\DriveFile([
+                'name' => $filename,
+                'parents' => [$folderId],
+            ]);
+
+            $file = $service->files->create($fileMetadata, [
+                'data' => $pdfContent,
+                'mimeType' => 'application/pdf',
+                'uploadType' => 'multipart',
+                'fields' => 'id',
+            ]);
+
+            $fileId = $file->getId();
+            $this->makeDriveFilePublic($fileId);
+            $driveUrl = "https://drive.google.com/file/d/{$fileId}/view";
+
+            // Hapus file lama di Drive jika ada
+            if ($suratAktif->file) {
+                $this->deleteDriveFile($suratAktif->file);
+            }
+
+            $suratAktif->update(['file' => $driveUrl]);
+
+            // Sinkronkan ke Arsip Utama
+            $kategori = KategoriArsip::firstOrCreate(['kategori_arsip' => 'Surat Keterangan Aktif']);
+            ArsipUtama::updateOrCreate(
+                [
+                    'kategori_arsip_id' => $kategori->id,
+                    'nama_arsip' => "Surat Keterangan Aktif - No. {$nomorSurat} - " . ($suratAktif->users->name ?? '-'),
+                ],
+                [
+                    'user_id' => Auth::id() ?? ($suratAktif->users_id ?? 1),
+                    'tahun_arsip' => $tahun,
+                    'file_arsip' => $driveUrl,
+                    'is_active' => 1,
+                ]
+            );
+
+            Alert::success('Berhasil', "PDF Surat Aktif {$filename} berhasil dibuat dan diarsipkan di Google Drive.")
+                ->autoclose(4000)->toToast()->timerProgressBar();
+
+        } catch (\Throwable $e) {
+            Log::error('Generate Arsip Surat Aktif Error: ' . $e->getMessage());
+            Alert::error('Gagal', 'Gagal membuat arsip PDF: ' . $e->getMessage())
+                ->autoclose(5000)->toToast()->timerProgressBar();
+        }
+
+        return redirect()->back();
     }
 }

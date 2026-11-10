@@ -29,6 +29,14 @@ class SuratAktifDataTable extends DataTable
             ->addColumn('checkbox', function ($item) {
                 return '<input type="checkbox" name="ids[]" class="row-checkbox" value="' . $item->id . '" style="cursor: pointer; transform: scale(1.2);">';
             })
+            ->addColumn('no_surat', function ($item) {
+                $noUrut = sprintf('%03d', (int) ($item->no_surat ?? $item->id));
+                $tahun = $item->created_at ? $item->created_at->format('Y') : date('Y');
+                return '<div class="text-nowrap"><span class="badge badge-success px-2 py-1 font-weight-bold" style="font-size: 11px;">' . $noUrut . '</span><br><small class="text-muted" style="font-size: 10px;">' . $noUrut . '/UIS.B1/LL/.../' . $tahun . '</small></div>';
+            })
+            ->filterColumn('no_surat', function ($query, $keyword) {
+                $query->where('no_surat', 'like', "%{$keyword}%");
+            })
             ->addColumn('users_id', function ($item) {
                 $name = $item->users ? $item->users->name : '-';
                 if (Auth::user()->is_admin || Auth::user()->is_superadmin || Auth::user()->is_staffbaak) {
@@ -49,6 +57,14 @@ class SuratAktifDataTable extends DataTable
                     $q->where('program_studi', 'like', "%{$keyword}%");
                 });
             })
+            ->addColumn('file', function ($item) {
+                if ($item->file) {
+                    return '<a href="' . $item->file . '" target="_blank" class="btn btn-sm btn-success text-white px-2 py-1 rounded shadow-sm text-nowrap" title="Buka Berkas di Google Drive" style="font-size: 11px;">
+                                <i class="fa-brands fa-google-drive mr-1"></i> Buka Berkas
+                            </a>';
+                }
+                return '<span class="badge badge-secondary px-2 py-1 text-nowrap" style="font-size: 10px; opacity: 0.85;"><i class="fa-solid fa-file-circle-xmark mr-1"></i> Belum Ada</span>';
+            })
             ->addColumn('status', function ($item) {
                 return $item->status == 'pending' ? '<span class="badge badge-warning text-white px-3 py-2">Pending</span>' : ($item->status == 'diterima' ? '<span class="badge badge-success text-white px-3 py-2">Diterima</span>' : ($item->status == 'ditolak' ? '<span class="badge badge-danger text-white px-3 py-2">Ditolak</span>' : '-'));
             })
@@ -64,12 +80,28 @@ class SuratAktifDataTable extends DataTable
             ->addColumn('action', function ($item) {
                 $actions = '';
 
+                // Tombol Arsip Google Drive (Upload / Generate)
+                if (Gate::check('surat_aktif_edit') || Gate::check('surat_aktif_delete')) {
+                    $actions .= '
+                        <button type="button" class="btn btn-sm btn-info text-white py-2 px-2 px-md-3 mb-1 mr-1 mr-md-2 rounded btn-arsip-modal" 
+                            data-id="' . $item->id . '" 
+                            data-type="Surat Keterangan Aktif"
+                            data-nomor="' . sprintf('%03d', (int) ($item->no_surat ?? $item->id)) . '" 
+                            data-name="' . htmlspecialchars($item->users->name ?? '-', ENT_QUOTES) . '" 
+                            data-file="' . ($item->file ?? '') . '"
+                            data-action-upload="' . route('suratAktif.uploadArsip', $item) . '"
+                            data-action-generate="' . route('suratAktif.generateArsip', $item) . '"
+                            title="Kelola Berkas Arsip Google Drive">
+                            <i class="fa-brands fa-google-drive"></i><span class="d-none d-md-inline"> Arsip</span>
+                        </button>
+                    ';
+                }
+
                 // Tombol Cetak & aksi admin: gated by permission
                 if (Gate::check('surat_aktif_edit') || Gate::check('surat_aktif_delete')) {
-                    // Print/Cetak hanya untuk yang punya akses edit (staff/admin)
                     $actions .= '
                         <a href="' . route('suratAktif.show', $item) . '" class="btn btn-sm btn-success text-white py-2 px-2 px-md-3 mb-1 mr-1 mr-md-2 rounded" title="Cetak Surat" target="_blank">
-                            <i class="fa-solid fa-print"></i><span class="d-none d-md-inline"> Cetak Surat</span>
+                            <i class="fa-solid fa-print"></i><span class="d-none d-md-inline"> Cetak</span>
                         </a>
                     ';
                 }
@@ -92,6 +124,13 @@ class SuratAktifDataTable extends DataTable
 
                 // Tombol aksi untuk mahasiswa
                 if (Auth::user()->is_mahasiswa) {
+                    if ($item->file) {
+                        $actions .= '
+                            <a href="' . $item->file . '" class="btn btn-sm btn-outline-success px-2 px-md-3 mr-1 mr-md-2 rounded" title="Buka Berkas di Google Drive" target="_blank">
+                                <i class="fa-brands fa-google-drive mr-1"></i><span class="d-none d-md-inline"> Berkas</span>
+                            </a>
+                        ';
+                    }
                     if ($item->status == 'pending') {
                         $actions .= '<span class="text-info small font-italic"><i class="fa-solid fa-clock mr-1"></i>Estimasi surat diproses 3 hari kerja</span>';
                     } else {
@@ -104,7 +143,7 @@ class SuratAktifDataTable extends DataTable
                         if ($item->status == 'diterima') {
                             $actions .= '
                                 <a href="' . route('suratAktif.show', $item) . '" class="btn btn-sm btn-success text-white px-2 px-md-3 mr-1 mr-md-2 rounded" title="Cetak Surat" target="_blank">
-                                    <i class="fa-solid fa-print"></i><span class="d-none d-md-inline"> Cetak Surat</span>
+                                    <i class="fa-solid fa-print"></i><span class="d-none d-md-inline"> Cetak</span>
                                 </a>
                             ';
                         }
@@ -118,7 +157,7 @@ class SuratAktifDataTable extends DataTable
                 return $actions;
             })
             ->setRowId('DT_RowIndex')
-            ->rawColumns(['action', 'users_id', 'program_studi_id', 'status', 'created_at', 'checkbox']);
+            ->rawColumns(['action', 'users_id', 'program_studi_id', 'status', 'created_at', 'checkbox', 'no_surat', 'file']);
     }
 
     /**
@@ -207,32 +246,42 @@ class SuratAktifDataTable extends DataTable
             ->orderable(false)
             ->searchable(false);
 
+        $columns[] = Column::make('no_surat')
+            ->title('NO SURAT')
+            ->width('12%')
+            ->addClass('text-center align-middle');
+
         $columns[] = Column::make('users_id')
             ->title('NAMA MAHASISWA')
-            ->width('25%')
-            ->addClass('text-start');
+            ->width('20%')
+            ->addClass('text-start align-middle');
 
         $columns[] = Column::make('program_studi_id')
             ->title('PROGRAM STUDI')
-            ->width('20%')
-            ->addClass('text-start');
+            ->width('16%')
+            ->addClass('text-start align-middle');
+
+        $columns[] = Column::make('file')
+            ->title('BERKAS ARSIP')
+            ->width('12%')
+            ->addClass('text-center align-middle');
 
         $columns[] = Column::make('created_at')
             ->title('TANGGAL SUBMIT')
-            ->width('18%')
-            ->addClass('text-center');
+            ->width('14%')
+            ->addClass('text-center align-middle');
 
         $columns[] = Column::make('status')
             ->title('STATUS')
             ->width('10%')
-            ->addClass('text-center');
+            ->addClass('text-center align-middle');
 
         $columns[] = Column::computed('action')
             ->title('AKSI')
             ->exportable(false)
             ->printable(false)
             ->width('15%')
-            ->addClass('text-center');
+            ->addClass('text-center align-middle');
 
         return $columns;
     }

@@ -167,6 +167,13 @@
             <!-- Button untuk melihat detail -->
             <div class="footer">
                 <button onclick="togglePreview()" id="previewBtn" class="btn">LIHAT DOKUMEN ASLI</button>
+                @if($suratAktif->file)
+                    <div style="margin-top: 10px;">
+                        <a href="{{ $suratAktif->file }}" target="_blank" class="btn" style="background: #008240; text-decoration: none; display: inline-block;">
+                            BUKA BERKAS ARSIP DI GOOGLE DRIVE
+                        </a>
+                    </div>
+                @endif
             </div>
 
             <!-- Preview Section (Iframe) -->

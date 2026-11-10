@@ -29,6 +29,14 @@ class SuratAkademikDataTable extends DataTable
             ->addColumn('checkbox', function ($item) {
                 return '<input type="checkbox" name="ids[]" class="row-checkbox" value="' . $item->id . '" style="cursor: pointer; transform: scale(1.2);">';
             })
+            ->addColumn('no_surat', function ($item) {
+                $noUrut = sprintf('%03d', (int) ($item->no_surat ?? $item->id));
+                $tahun = $item->created_at ? $item->created_at->format('Y') : date('Y');
+                return '<div class="text-nowrap"><span class="badge badge-success px-2 py-1 font-weight-bold" style="font-size: 11px;">' . $noUrut . '</span><br><small class="text-muted" style="font-size: 10px;">' . $noUrut . '/UIS.B1/LA/.../' . $tahun . '</small></div>';
+            })
+            ->filterColumn('no_surat', function ($query, $keyword) {
+                $query->where('no_surat', 'like', "%{$keyword}%");
+            })
             ->addColumn('users_id', function ($item) {
                 return $item->user ? $item->user->name : '-';
             })
@@ -45,6 +53,14 @@ class SuratAkademikDataTable extends DataTable
                     $q->where('program_studi', 'like', "%{$keyword}%");
                 });
             })
+            ->addColumn('file', function ($item) {
+                if ($item->file) {
+                    return '<a href="' . $item->file . '" target="_blank" class="btn btn-sm btn-success text-white px-2 py-1 rounded shadow-sm text-nowrap" title="Buka Berkas di Google Drive" style="font-size: 11px;">
+                                <i class="fa-brands fa-google-drive mr-1"></i> Buka Berkas
+                            </a>';
+                }
+                return '<span class="badge badge-secondary px-2 py-1 text-nowrap" style="font-size: 10px; opacity: 0.85;"><i class="fa-solid fa-file-circle-xmark mr-1"></i> Belum Ada</span>';
+            })
             ->addColumn('created_at', function ($item) {
                 return $item->created_at ? $item->created_at->locale('id')->isoFormat('dddd, DD/MM/YYYY - HH:mm') : '-';
             })
@@ -58,18 +74,33 @@ class SuratAkademikDataTable extends DataTable
                 $query->where('status', 'like', "%{$keyword}%");
             })
             ->addColumn('action', function ($item) {
-                $showButton = '';
-                $editButton = '';
-                $deleteButton = '';
+                $actions = '';
+
+                // Tombol Arsip Google Drive (Upload / Generate)
+                if (Gate::check('surat_akademik_edit') || Gate::check('surat_akademik_delete')) {
+                    $actions .= '
+                        <button type="button" class="btn btn-sm btn-info text-white py-2 px-2 px-md-3 mb-1 mr-1 mr-md-2 rounded btn-arsip-modal" 
+                            data-id="' . $item->id . '" 
+                            data-type="Surat Layanan Akademik"
+                            data-nomor="' . sprintf('%03d', (int) ($item->no_surat ?? $item->id)) . '" 
+                            data-name="' . htmlspecialchars($item->user->name ?? '-', ENT_QUOTES) . '" 
+                            data-file="' . ($item->file ?? '') . '"
+                            data-action-upload="' . route('suratAkademik.uploadArsip', $item->id) . '"
+                            data-action-generate="' . route('suratAkademik.generateArsip', $item->id) . '"
+                            title="Kelola Berkas Arsip Google Drive">
+                            <i class="fa-brands fa-google-drive"></i><span class="d-none d-md-inline"> Arsip</span>
+                        </button>
+                    ';
+                }
 
                 if (Gate::check('surat_akademik_edit') || Gate::check('surat_akademik_delete')) {
-                    $showButton = '<a href="' . route('suratAkademik.show', $item->id) . '" class="btn btn-sm btn-success text-white py-2 px-2 px-md-3 mb-1 mr-1 mr-md-2 rounded" title="Cetak Surat" target="_blank"><i class="fa-solid fa-print"></i><span class="d-none d-md-inline"> Cetak Surat</span></a>';
+                    $actions .= '<a href="' . route('suratAkademik.show', $item->id) . '" class="btn btn-sm btn-success text-white py-2 px-2 px-md-3 mb-1 mr-1 mr-md-2 rounded" title="Cetak Surat" target="_blank"><i class="fa-solid fa-print"></i><span class="d-none d-md-inline"> Cetak</span></a>';
                 }
                 if (Gate::check('surat_akademik_edit')) {
-                    $editButton = '<a href="' . route('suratAkademik.edit', $item->id) . '" class="btn btn-sm btn-warning text-white py-2 px-2 px-md-3 mb-1 mr-1 mr-md-2 rounded" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>';
+                    $actions .= '<a href="' . route('suratAkademik.edit', $item->id) . '" class="btn btn-sm btn-warning text-white py-2 px-2 px-md-3 mb-1 mr-1 mr-md-2 rounded" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>';
                 }
                 if (Gate::check('surat_akademik_delete')) {
-                    $deleteButton = '
+                    $actions .= '
                         <form action="' . route('suratAkademik.destroy', $item->id) . '" method="POST" class="d-inline">
                             ' . csrf_field() . '
                             ' . method_field('delete') . '
@@ -79,17 +110,23 @@ class SuratAkademikDataTable extends DataTable
                 }
 
                 if (Auth::user()->is_mahasiswa) {
-                    $showButton = '<a href="' . route('suratAkademik.show', $item->id) . '" class="btn btn-sm btn-success text-white py-2 px-2 px-md-3 mb-1 mr-1 mr-md-2 rounded" title="Cetak Surat" target="_blank"><i class="fa-solid fa-print"></i><span class="d-none d-md-inline"> Cetak Surat</span></a>';
+                    if ($item->file) {
+                        $actions .= '
+                            <a href="' . $item->file . '" class="btn btn-sm btn-outline-success px-2 px-md-3 mr-1 mr-md-2 rounded" title="Buka Berkas di Google Drive" target="_blank">
+                                <i class="fa-brands fa-google-drive mr-1"></i><span class="d-none d-md-inline"> Berkas</span>
+                            </a>
+                        ';
+                    }
+                    $actions .= '<a href="' . route('suratAkademik.show', $item->id) . '" class="btn btn-sm btn-success text-white py-2 px-2 px-md-3 mb-1 mr-1 mr-md-2 rounded" title="Cetak Surat" target="_blank"><i class="fa-solid fa-print"></i><span class="d-none d-md-inline"> Cetak</span></a>';
                 }
 
-                $result = $showButton . $editButton . $deleteButton;
-                if (empty(trim($result))) {
-                    $result = '<span class="text-muted small">-</span>';
+                if (empty(trim($actions))) {
+                    $actions = '<span class="text-muted small">-</span>';
                 }
-                return $result;
+                return $actions;
             })
             ->setRowId('DT_RowIndex')
-            ->rawColumns(['action', 'users_id', 'program_studi_id', 'created_at', 'status', 'checkbox']);
+            ->rawColumns(['action', 'users_id', 'program_studi_id', 'created_at', 'status', 'checkbox', 'no_surat', 'file']);
     }
 
 
@@ -176,32 +213,42 @@ class SuratAkademikDataTable extends DataTable
             ->orderable(false)
             ->searchable(false);
 
+        $columns[] = Column::make('no_surat')
+            ->title('NO SURAT')
+            ->width('12%')
+            ->addClass('text-center align-middle');
+
         $columns[] = Column::make('users_id')
             ->title('NAMA MAHASISWA')
-            ->width('25%')
-            ->addClass('text-start');
+            ->width('20%')
+            ->addClass('text-start align-middle');
 
         $columns[] = Column::make('program_studi_id')
             ->title('PROGRAM STUDI')
-            ->width('20%')
-            ->addClass('text-start');
+            ->width('16%')
+            ->addClass('text-start align-middle');
+
+        $columns[] = Column::make('file')
+            ->title('BERKAS ARSIP')
+            ->width('12%')
+            ->addClass('text-center align-middle');
 
         $columns[] = Column::make('created_at')
             ->title('TANGGAL SUBMIT')
-            ->width('18%')
-            ->addClass('text-center');
+            ->width('14%')
+            ->addClass('text-center align-middle');
 
         $columns[] = Column::make('status')
             ->title('STATUS')
             ->width('10%')
-            ->addClass('text-center');
+            ->addClass('text-center align-middle');
 
         $columns[] = Column::computed('action')
             ->title('AKSI')
             ->exportable(false)
             ->printable(false)
             ->width('15%')
-            ->addClass('text-center');
+            ->addClass('text-center align-middle');
 
         return $columns;
     }

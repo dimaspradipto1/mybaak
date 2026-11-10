@@ -16,9 +16,18 @@ use Illuminate\Support\Facades\Auth;
 use App\Imports\SuratAkademikImport;
 use App\Exports\SuratAkademikTemplateExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Traits\HandleGoogleDrive;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\ArsipUtama;
+use App\Models\KategoriArsip;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class SuratAkademikController extends Controller
 {
+    use HandleGoogleDrive;
     public function exportTemplate()
     {
         return Excel::download(new SuratAkademikTemplateExport, 'template_surat_akademik.xlsx');
@@ -126,7 +135,12 @@ class SuratAkademikController extends Controller
             return redirect()->back();
         }
 
+        $lastSurat = SuratAkademik::whereNotNull('no_surat')->orderByRaw('CAST(no_surat AS UNSIGNED) DESC')->first();
+        $nextNo = $lastSurat ? ((int) $lastSurat->no_surat + 1) : 1;
+        $noSuratFormatted = sprintf("%03d", $nextNo);
+
         $data = [
+            'no_surat' => $noSuratFormatted,
             'users_id' => $userId,
             'program_studi_id' => $mahasiswa->programStudi->id,
             'npm' => $mahasiswa->npm,
@@ -303,5 +317,179 @@ class SuratAkademikController extends Controller
         $kabauk = Pegawai::where('jabatan', 'LIKE', '%BIRO ADMINISTRASI UMUM%')->first();
 
         return view('pages.suratAkademik.validasi', compact('suratAkademik', 'kabaak', 'kabauk'));
+    }
+
+    public function getBulanRomawi()
+    {
+        $petaRomawi = [
+            'January' => 'I', 'February' => 'II', 'March' => 'III', 'April' => 'IV',
+            'May' => 'V', 'June' => 'VI', 'July' => 'VII', 'August' => 'VIII',
+            'September' => 'IX', 'October' => 'X', 'November' => 'XI', 'December' => 'XII',
+        ];
+        return $petaRomawi[date('F')] ?? 'I';
+    }
+
+    /**
+     * Upload berkas arsip surat layanan akademik ke Google Drive dan sinkronkan ke Arsip.
+     */
+    public function uploadArsip(Request $request, SuratAkademik $suratAkademik)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:15360',
+        ]);
+
+        try {
+            $uploaded = $request->file('file');
+            $ext = $uploaded->getClientOriginalExtension();
+
+            $noUrut = sprintf('%03d', (int) ($suratAkademik->no_surat ?? $suratAkademik->id));
+            $bulanRomawi = $this->getBulanRomawi();
+            $tahun = $suratAkademik->created_at ? $suratAkademik->created_at->format('Y') : date('Y');
+            $nomorSurat = "{$noUrut}/UIS.B1/LA/{$bulanRomawi}/{$tahun}";
+            $nomorSuratClean = "{$noUrut}-UIS.B1-LA-{$bulanRomawi}-{$tahun}";
+            $permohonanSlug = Str::slug(($suratAkademik->permohonan ?? 'Layanan') . '_' . ($suratAkademik->user->name ?? 'Mahasiswa'), '_');
+
+            // Format nama berkas sesuai nomor urut dan nomor surat
+            $filename = "{$noUrut}_{$nomorSuratClean}_{$permohonanSlug}.{$ext}";
+
+            $service = $this->driveService();
+            $folderId = env('GOOGLE_DRIVE_SURAT_LAYANAN_AKADEMIK_FOLDER_ID', '1Qo-lkub8YdsMpfyNHkt-sU-Xiw1n2Ral');
+
+            if (!$folderId) {
+                throw new \Exception('GOOGLE_DRIVE_SURAT_LAYANAN_AKADEMIK_FOLDER_ID tidak ditemukan di .env');
+            }
+
+            $fileMetadata = new \Google\Service\Drive\DriveFile([
+                'name' => $filename,
+                'parents' => [$folderId],
+            ]);
+
+            $content = File::get($uploaded->getRealPath());
+
+            $file = $service->files->create($fileMetadata, [
+                'data' => $content,
+                'uploadType' => 'multipart',
+                'fields' => 'id',
+            ]);
+
+            $fileId = $file->getId();
+            $this->makeDriveFilePublic($fileId);
+            $driveUrl = "https://drive.google.com/file/d/{$fileId}/view";
+
+            // Hapus file lama di Drive jika ada
+            if ($suratAkademik->file) {
+                $this->deleteDriveFile($suratAkademik->file);
+            }
+
+            $suratAkademik->update(['file' => $driveUrl]);
+
+            // Sinkronkan ke Arsip Utama
+            $kategori = KategoriArsip::firstOrCreate(['kategori_arsip' => 'Surat Layanan Akademik']);
+            ArsipUtama::updateOrCreate(
+                [
+                    'kategori_arsip_id' => $kategori->id,
+                    'nama_arsip' => "Surat Layanan Akademik - No. {$nomorSurat} - " . ($suratAkademik->user->name ?? '-') . " ({$suratAkademik->permohonan})",
+                ],
+                [
+                    'user_id' => Auth::id() ?? ($suratAkademik->users_id ?? 1),
+                    'tahun_arsip' => $tahun,
+                    'file_arsip' => $driveUrl,
+                    'is_active' => 1,
+                ]
+            );
+
+            Alert::success('Berhasil', "Berkas arsip {$filename} berhasil diunggah ke Google Drive.")
+                ->autoclose(4000)->toToast()->timerProgressBar();
+
+        } catch (\Throwable $e) {
+            Log::error('Upload Arsip Surat Akademik Error: ' . $e->getMessage());
+            Alert::error('Gagal', 'Gagal mengunggah berkas arsip: ' . $e->getMessage())
+                ->autoclose(5000)->toToast()->timerProgressBar();
+        }
+
+        return redirect()->back();
+    }
+
+    /**
+     * Otomatis generate PDF Formulir Layanan Akademik dan simpan ke folder Google Drive Arsip.
+     */
+    public function generateArsip(SuratAkademik $suratAkademik)
+    {
+        try {
+            $noUrut = sprintf('%03d', (int) ($suratAkademik->no_surat ?? $suratAkademik->id));
+            $bulanRomawi = $this->getBulanRomawi();
+            $tahun = $suratAkademik->created_at ? $suratAkademik->created_at->format('Y') : date('Y');
+
+            $nomorSurat = "{$noUrut}/UIS.B1/LA/{$bulanRomawi}/{$tahun}";
+            $nomorSuratClean = "{$noUrut}-UIS.B1-LA-{$bulanRomawi}-{$tahun}";
+            $permohonanSlug = Str::slug(($suratAkademik->permohonan ?? 'Layanan') . '_' . ($suratAkademik->user->name ?? 'Mahasiswa'), '_');
+
+            // Format nama berkas sesuai nomor urut dan nomor surat
+            $filename = "{$noUrut}_{$nomorSuratClean}_{$permohonanSlug}.pdf";
+
+            $dosen = Dosen::find($suratAkademik->dosen_pembimbing_akademik);
+            $kaprodi = Dosen::find($suratAkademik->kaprodi);
+            $kabaak = Pegawai::where('jabatan', 'LIKE', '%BIRO ADMINISTRASI AKADEMIK%')->first();
+            $kabauk = Pegawai::where('jabatan', 'LIKE', '%BIRO ADMINISTRASI UMUM%')->first();
+            $fakultas = $suratAkademik->mahasiswa->fakultas ?? 'Fakultas Sains dan Teknologi';
+
+            $pdf = Pdf::loadView('pages.suratAkademik.pdf', compact('suratAkademik', 'dosen', 'kaprodi', 'kabaak', 'kabauk', 'fakultas', 'bulanRomawi'));
+            $pdfContent = $pdf->output();
+
+            $service = $this->driveService();
+            $folderId = env('GOOGLE_DRIVE_SURAT_LAYANAN_AKADEMIK_FOLDER_ID', '1Qo-lkub8YdsMpfyNHkt-sU-Xiw1n2Ral');
+
+            if (!$folderId) {
+                throw new \Exception('GOOGLE_DRIVE_SURAT_LAYANAN_AKADEMIK_FOLDER_ID tidak ditemukan di .env');
+            }
+
+            $fileMetadata = new \Google\Service\Drive\DriveFile([
+                'name' => $filename,
+                'parents' => [$folderId],
+            ]);
+
+            $file = $service->files->create($fileMetadata, [
+                'data' => $pdfContent,
+                'mimeType' => 'application/pdf',
+                'uploadType' => 'multipart',
+                'fields' => 'id',
+            ]);
+
+            $fileId = $file->getId();
+            $this->makeDriveFilePublic($fileId);
+            $driveUrl = "https://drive.google.com/file/d/{$fileId}/view";
+
+            // Hapus file lama di Drive jika ada
+            if ($suratAkademik->file) {
+                $this->deleteDriveFile($suratAkademik->file);
+            }
+
+            $suratAkademik->update(['file' => $driveUrl]);
+
+            // Sinkronkan ke Arsip Utama
+            $kategori = KategoriArsip::firstOrCreate(['kategori_arsip' => 'Surat Layanan Akademik']);
+            ArsipUtama::updateOrCreate(
+                [
+                    'kategori_arsip_id' => $kategori->id,
+                    'nama_arsip' => "Surat Layanan Akademik - No. {$nomorSurat} - " . ($suratAkademik->user->name ?? '-') . " ({$suratAkademik->permohonan})",
+                ],
+                [
+                    'user_id' => Auth::id() ?? ($suratAkademik->users_id ?? 1),
+                    'tahun_arsip' => $tahun,
+                    'file_arsip' => $driveUrl,
+                    'is_active' => 1,
+                ]
+            );
+
+            Alert::success('Berhasil', "PDF Surat Akademik {$filename} berhasil dibuat dan diarsipkan di Google Drive.")
+                ->autoclose(4000)->toToast()->timerProgressBar();
+
+        } catch (\Throwable $e) {
+            Log::error('Generate Arsip Surat Akademik Error: ' . $e->getMessage());
+            Alert::error('Gagal', 'Gagal membuat arsip PDF: ' . $e->getMessage())
+                ->autoclose(5000)->toToast()->timerProgressBar();
+        }
+
+        return redirect()->back();
     }
 }
