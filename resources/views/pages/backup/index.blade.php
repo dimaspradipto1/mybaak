@@ -1,18 +1,9 @@
 @extends('layouts.dashboard.template')
 
+@section('title', 'Backup Database & Storage')
+
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-<div class="mb-4">
-    <h4 class="font-weight-bold" style="color: #2e6b34; margin-bottom: 4px;">Backup Database & Storage</h4>
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb bg-transparent p-0 mb-0" style="font-size: 13px;">
-            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}" style="color: #6c757d; text-decoration: none;">Home</a></li>
-            <li class="breadcrumb-item text-muted">Pengaturan Sistem</li>
-            <li class="breadcrumb-item active" style="color: #2e6b34;" aria-current="page">Backup Database & Storage</li>
-        </ol>
-    </nav>
-</div>
 
 @if (session('success'))
     <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-4" role="alert" style="border-radius: 8px;">

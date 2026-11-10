@@ -42,21 +42,73 @@ body { font-family: 'Poppins', sans-serif !important; }
 .user-details { margin-top: 0 !important; }
 
 .page-header {
-    background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url("/assets/images/gedunguis.JPG") !important;
+    background: linear-gradient(135deg, rgba(0, 45, 20, 0.65) 0%, rgba(10, 30, 20, 0.65) 100%), url("/assets/images/gedunguis.JPG") !important;
     background-size: cover !important;
     background-position: center !important;
-    border-bottom: 4px solid var(--uis-yellow) !important;
-    height: 140px !important;
+    border-bottom: 3px solid var(--uis-yellow) !important;
+    min-height: 110px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 0 40px !important;
+    padding: 16px 24px !important;
     margin-bottom: 0 !important;
 }
 .page-header:before { display: none !important; }
 .page-header .page-block { padding: 0 !important; display: flex !important; align-items: center !important; width: 100% !important; }
 .page-header .page-block>.row { width: 100% !important; margin: 0 !important; }
 
-.pcoded-header, .main-menu-header, .page-header { border: none !important; }
+/* Page Header Typography & Breadcrumb */
+.page-header .page-header-title h4 {
+    font-size: 1.35rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    margin-bottom: 3px !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+}
+.page-header .page-header-title p {
+    font-size: 13px !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    margin-bottom: 0 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+}
+.page-header .breadcrumb {
+    background: rgba(0, 0, 0, 0.28) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 20px !important;
+    padding: 5px 14px !important;
+    margin: 0 !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+.page-header .breadcrumb-item {
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+.page-header .breadcrumb-item a {
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+}
+.page-header .breadcrumb-item a:hover {
+    color: var(--uis-yellow, #FFF742) !important;
+    text-decoration: underline !important;
+}
+.page-header .breadcrumb-item.active {
+    color: var(--uis-yellow, #FFF742) !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+}
+.page-header .breadcrumb-item + .breadcrumb-item::before {
+    content: "›" !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    padding: 0 8px !important;
+}
+
+.pcoded-header, .main-menu-header { border: none !important; }
 .pcoded-navbar { border-right: none !important; }
 .pcoded-main-container { background: #f8f9fc !important; }
 
@@ -176,6 +228,8 @@ body { font-family: 'Poppins', sans-serif !important; }
         margin: 0 !important;
         border-radius: 0 !important;
         overflow: hidden !important;
+        padding-left: max(30px, calc((100% - 1140px) / 2)) !important;
+        padding-right: max(30px, calc((100% - 1140px) / 2)) !important;
     }
 
     /* ── Align topnav menu items to 1140px ──
@@ -249,28 +303,38 @@ body { font-family: 'Poppins', sans-serif !important; }
     white-space: nowrap !important;
     transition: all 0.2s !important;
 }
-#uis-topnav > ul > li > a:hover,
+#uis-topnav > ul > li > a:hover {
+    background: rgba(0, 165, 81, 0.08) !important;
+    color: var(--uis-green-dark, #008240) !important;
+}
 #uis-topnav > ul > li.active > a {
-    background: var(--uis-green) !important;
-    color: #fff !important;
-    border-bottom: 3px solid var(--uis-yellow) !important;
+    background: linear-gradient(135deg, #00A551 0%, #008240 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(0, 165, 81, 0.28) !important;
+    font-weight: 600 !important;
+}
+#uis-topnav > ul > li.active > a i {
+    color: var(--uis-yellow, #FFF742) !important;
+    font-size: 14px !important;
 }
 #uis-topnav > ul > li > a i { font-size: 14px; }
 
-/* Dropdown caret: ▶ default → ▾ on hover */
+/* Dropdown caret: ▾ */
 #uis-topnav > ul > li.has-sub > a::after {
-    content: "▶";
-    font-family: inherit;
-    font-size: 10px;
-    margin-left: 6px;
-    color: #aaa;
-    line-height: 1;
-}
-#uis-topnav > ul > li.has-sub:hover > a::after,
-#uis-topnav > ul > li.has-sub.active > a::after {
     content: "▾";
-    font-size: 16px;
-    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    margin-left: 5px;
+    color: #888;
+    line-height: 1;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+#uis-topnav > ul > li.has-sub:hover > a::after {
+    color: var(--uis-green, #00A551);
+}
+#uis-topnav > ul > li.has-sub.active > a::after {
+    color: var(--uis-yellow, #FFF742) !important;
 }
 
 /* Submenu */

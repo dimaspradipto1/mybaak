@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Dashboard - {{ env('APP_NAME') }}</title>
+    <title>{{ View::hasSection('title') ? htmlspecialchars_decode(trim(View::getSection('title')), ENT_QUOTES) . ' - ' : (isset($title) ? $title . ' - ' : '') }}{{ config('app.name', 'MYBAAK') }}</title>
     <!-- Meta -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
@@ -230,23 +230,47 @@
                     @include('layouts.dashboard.sidebar')
 
                     <div class="pcoded-content">
+                        @php
+                            $headerTitle = View::hasSection('title') 
+                                ? htmlspecialchars_decode(trim(View::getSection('title')), ENT_QUOTES) 
+                                : ($title ?? 'Dashboard');
+                            $headerSubtitle = View::hasSection('subtitle') 
+                                ? htmlspecialchars_decode(trim(View::getSection('subtitle')), ENT_QUOTES) 
+                                : null;
+                        @endphp
                         <!-- Page-header start -->
                         <div class="page-header">
                             <div class="page-block">
-                                <div class="row align-items-center">
-                                    <div class="col-md-8">
+                                <div class="row align-items-center w-100 m-0">
+                                    <div class="col-md-7 col-12 p-0 mb-2 mb-md-0">
                                         <div class="page-header-title">
-                                            <h5 class="m-b-10">Dashboard</h5>
-                                            <p class="m-b-0">Welcome to Sistem Informasi {{ env('APP_NAME') }} </p>
+                                            <h4 class="font-weight-bold text-white mb-1" style="font-size: 1.35rem; letter-spacing: -0.3px;">{{ $headerTitle }}</h4>
+                                            <p class="mb-0 text-white" style="opacity: 0.88; font-size: 13px;">
+                                                @if($headerSubtitle)
+                                                    {{ $headerSubtitle }}
+                                                @elseif($headerTitle === 'Dashboard')
+                                                    Selamat datang di Panel Sistem Informasi {{ config('app.name', 'MYBAAK') }}
+                                                @else
+                                                    Panel Pengelolaan {{ $headerTitle }} &mdash; {{ config('app.name', 'MYBAAK') }}
+                                                @endif
+                                            </p>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <ul class="breadcrumb">
-                                            <li class="breadcrumb-item">
-                                                <a href="{{ route('dashboard') }}"><i class="fa fa-home"></i> Dashboard</a>
-                                            </li>
-                                            <li class="breadcrumb-item"><a href="javascript:void(0)">{{ $title ?? 'Dashboard' }}</a></li>
-                                        </ul>
+                                    <div class="col-md-5 col-12 p-0 text-md-right">
+                                        <nav aria-label="breadcrumb">
+                                            <ul class="breadcrumb d-inline-flex align-items-center justify-content-md-end p-0 m-0">
+                                                <li class="breadcrumb-item">
+                                                    <a href="{{ route('dashboard') }}">
+                                                        <i class="fa-solid fa-house mr-1"></i> Dashboard
+                                                    </a>
+                                                </li>
+                                                @if($headerTitle !== 'Dashboard')
+                                                    <li class="breadcrumb-item active" aria-current="page">
+                                                        {{ $headerTitle }}
+                                                    </li>
+                                                @endif
+                                            </ul>
+                                        </nav>
                                     </div>
                                 </div>
                             </div>
